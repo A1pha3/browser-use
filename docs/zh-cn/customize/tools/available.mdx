@@ -1,0 +1,112 @@
+---
+title: "可用工具列表"
+description: "以下是默认提供的所有工具。"
+icon: "list"
+mode: "wide"
+---
+
+## 导航和浏览器控制
+
+| 工具 | 说明 |
+|-----|------|
+| **`search`** | 搜索查询（使用 DuckDuckGo、Google、Bing） |
+| **`navigate`** | 导航到指定 URL |
+| **`go_back`** | 返回浏览器历史上一页 |
+| **`wait`** | 等待指定秒数 |
+
+## 页面交互
+
+| 工具 | 说明 |
+|-----|------|
+| **`click`** | 按索引点击元素 |
+| **`input`** | 在表单字段中输入文本 |
+| **`upload_file`** | 上传文件到文件输入框 |
+| **`scroll`** | 滚动页面（向上/向下） |
+| **`find_text`** | 滚动到页面特定文本位置 |
+| **`send_keys`** | 发送特殊按键（Enter、Escape 等） |
+
+## JavaScript 执行
+
+| 工具 | 说明 |
+|-----|------|
+| **`evaluate`** | 在页面上执行自定义 JavaScript 代码（用于高级交互、Shadow DOM、自定义选择器、数据提取） |
+
+## 标签页管理
+
+| 工具 | 说明 |
+|-----|------|
+| **`switch`** | 切换浏览器标签页 |
+| **`close`** | 关闭浏览器标签页 |
+
+## 内容提取
+
+| 工具 | 说明 |
+|-----|------|
+| **`extract`** | 使用 LLM 从网页提取数据 |
+
+## 视觉分析
+
+| 工具 | 说明 |
+|-----|------|
+| **`screenshot`** | 在下一浏览器状态请求截图进行视觉确认 |
+
+## 表单控件
+
+| 工具 | 说明 |
+|-----|------|
+| **`dropdown_options`** | 获取下拉选项值 |
+| **`select_dropdown`** | 选择下拉选项 |
+
+## 文件操作
+
+| 工具 | 说明 |
+|-----|------|
+| **`write_file`** | 写入内容到文件 |
+| **`read_file`** | 读取文件内容 |
+| **`replace_file`** | 替换文件中的文本 |
+
+## 任务完成
+
+| 工具 | 说明 |
+|-----|------|
+| **`done`** | 完成任务（始终可用） |
+
+## 使用示例
+
+### 导航操作
+
+```python
+task = """
+1. 使用 navigate 访问 https://example.com
+2. 使用 go_back 返回上一页
+3. 使用 wait 等待 3 秒
+"""
+```
+
+### 页面交互
+
+```python
+task = """
+1. 使用 click 点击提交按钮
+2. 使用 input 在邮箱字段输入 "test@example.com"
+3. 使用 scroll 向下滚动 500 像素
+4. 使用 send_keys 按下 "Tab Tab Enter"
+"""
+```
+
+### 文件操作
+
+```python
+task = """
+1. 使用 write_file 将提取的数据保存到 results.json
+2. 使用 read_file 读取配置文件
+3. 使用 replace_file 将 "old" 替换为 "new"
+"""
+```
+
+## 相关资源
+
+- [添加工具](./add.mdx)
+- [移除工具](./remove.mdx)
+- [工具响应格式](./response.mdx)
+- [自定义工具基础](/customize/tools/basics)

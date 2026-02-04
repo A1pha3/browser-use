@@ -1,0 +1,338 @@
+---
+title: "代理基础"
+description: "学习如何配置和创建浏览器自动化代理。"
+icon: "bot"
+mode: "wide"
+---
+
+## 概述
+
+`Agent` 是 Browser Use 的核心组件，负责接收任务、规划操作步骤并执行浏览器操作。本节介绍如何创建和配置 Agent。
+
+## 基础用法
+
+```python
+from browser_use import Agent, ChatBrowserUse
+
+# 创建代理
+agent = Agent(
+    task="搜索最新的 AI 新闻",
+    llm=ChatBrowserUse(),
+)
+
+async def main():
+    history = await agent.run(max_steps=100)
+```
+
+## 核心参数
+
+### task（任务描述）
+
+**描述**：用自然语言描述你要自动化的任务。
+
+```python
+agent = Agent(
+    task="访问 https://quotes.toscrape.com/，提取所有名人名言和作者",
+)
+```
+
+### llm（大语言模型）
+
+**描述**：指定用于驱动代理的大语言模型。
+
+```python
+from browser_use import ChatBrowserUse, ChatOpenAI
+
+# 使用 ChatBrowserUse（推荐）
+agent = Agent(task="...", llm=ChatBrowserUse())
+
+# 使用 OpenAI
+agent = Agent(task="...", llm=ChatOpenAI(model="gpt-4o"))
+```
+
+### browser（浏览器实例）
+
+**描述**：指定浏览器实例，如不指定则使用默认配置。
+
+```python
+from browser_use import Browser, Agent, ChatBrowserUse
+
+browser = Browser(headless=False)
+agent = Agent(task="...", browser=browser, llm=ChatBrowserUse())
+```
+
+## 执行方法
+
+### run()
+
+异步执行代理任务：
+
+```python
+history = await agent.run(
+    max_steps=100,  # 最大步数（默认：100）
+)
+```
+
+### 返回值
+
+`run()` 返回 `AgentHistoryList` 对象，包含完整的执行历史：
+
+```python
+history = await agent.run()
+
+# 访问各种信息
+print(history.urls())                     # 访问过的 URL 列表
+print(history.screenshot_paths())         # 截图路径列表
+print(history.screenshots())              # 截图（base64 字符串）
+print(history.action_names())             # 执行的操作名称
+print(history.extracted_content())        # 提取的内容
+print(history.errors())                   # 错误列表
+print(history.model_actions())             # 所有操作及其参数
+print(history.model_outputs())             # 所有模型输出
+print(history.last_action())              # 最后一个操作
+
+# 分析方法
+print(history.final_result())              # 最终提取的内容
+print(history.is_done())                  # 是否完成
+print(history.is_successful())            # 是否成功
+print(history.has_errors())               # 是否有错误
+print(history.number_of_steps())           # 执行步数
+print(history.total_duration_seconds())   # 总耗时（秒）
+```
+
+## 常用配置
+
+### vision（视觉模式）
+
+```python
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+    use_vision="auto",  # auto（默认）- 需要时使用截图
+    # use_vision=True,   # 始终包含截图
+    # use_vision=False,  # 从不包含截图
+)
+```
+
+### 视觉详细程度
+
+```python
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+    vision_detail_level="auto",  # auto（默认）
+    # vision_detail_level="low",   # 低细节，快速处理
+    # vision_detail_level="high",  # 高细节，精确分析
+)
+```
+
+### 页面内容提取模型
+
+```python
+# 使用单独的模型进行页面内容提取
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),                    # 主模型
+    page_extraction_llm=ChatOpenAI(model="gpt-4o-mini"),  # 提取模型
+)
+```
+
+## 执行控制
+
+```python
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+
+    max_steps=100,           # 最大执行步数
+    max_actions_per_step=3,  # 每步最大操作数
+    max_failures=3,          # 最大失败重试次数
+    final_response_after_failure=True,  # 失败后尝试最终响应
+
+    # 快速模式
+    flash_mode=False,  # 跳过评估和思考过程，更快
+)
+```
+
+## 系统提示词
+
+### 覆盖默认提示词
+
+```python
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+    override_system_message="""你是一个专业的浏览器自动化助手。
+    规则：
+    1. 始终等待页面完全加载后再操作
+    2. 优先使用键盘导航
+    3. 遇到错误时尝试备用方案
+    """,
+)
+```
+
+### 扩展默认提示词
+
+```python
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+    extend_system_message="""额外规则：
+    1. 填写表单时仔细检查所有字段
+    2. 提交前确认数据正确性
+    """,
+)
+```
+
+## 初始操作
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+    browser=Browser(headless=False),
+    initial_actions=[
+        {'open_tab': {'url': 'https://example.com'}},
+    ],
+)
+```
+
+## 文件和数据管理
+
+```python
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+
+    save_conversation_path='./conversation.json',  # 保存对话历史
+    save_conversation_path_encoding='utf-8',        # 编码格式
+
+    available_file_paths=['./data', './config'],   # 可访问的文件路径
+
+    sensitive_data={                                # 敏感数据
+        'api_key': 'your-key-here',
+    },
+)
+```
+
+## 视觉输出
+
+```python
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+
+    generate_gif=False,  # 或设置为路径如 './animation.gif'
+    include_attributes=['id', 'name', 'placeholder'],  # HTML 属性
+)
+```
+
+## 超时控制
+
+```python
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+
+    llm_timeout=90,      # LLM 调用超时（秒）
+    step_timeout=120,     # 每步超时（秒）
+)
+```
+
+## 内存管理
+
+```python
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+
+    max_history_items=None,  # 保留的历史步骤数，None 表示全部保留
+)
+```
+
+## 直接打开 URL
+
+```python
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+
+    directly_open_url=True,  # 检测到 URL 时直接打开（默认：True）
+)
+```
+
+## 成本计算
+
+```python
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+
+    calculate_cost=True,  # 计算和跟踪 API 成本
+)
+```
+
+## 完整配置示例
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+
+agent = Agent(
+    # 核心配置
+    task="你的任务描述",
+    llm=ChatBrowserUse(),
+    browser=Browser(headless=False),
+
+    # 视觉
+    use_vision="auto",
+    vision_detail_level="auto",
+    page_extraction_llm=None,
+
+    # 执行控制
+    max_steps=100,
+    max_actions_per_step=3,
+    max_failures=3,
+    final_response_after_failure=True,
+    flash_mode=False,
+
+    # 系统提示词
+    override_system_message=None,
+    extend_system_message=None,
+
+    # 初始操作
+    initial_actions=None,
+
+    # 文件和数据
+    save_conversation_path=None,
+    save_conversation_path_encoding='utf-8',
+    available_file_paths=None,
+    sensitive_data=None,
+
+    # 视觉输出
+    generate_gif=False,
+    include_attributes=['id', 'name', 'placeholder', 'type', 'class'],
+
+    # 性能和超时
+    max_history_items=None,
+    llm_timeout=90,
+    step_timeout=120,
+    directly_open_url=True,
+
+    # 成本
+    calculate_cost=False,
+
+    # 显示文件信息
+    display_files_in_done_text=True,
+)
+
+async def main():
+    history = await agent.run()
+```
+
+## 相关资源
+
+- [所有 Agent 参数](/customize/agent/all-parameters)
+- [工具配置](/customize/tools/basics)
+- [浏览器配置](/customize/browser/basics)

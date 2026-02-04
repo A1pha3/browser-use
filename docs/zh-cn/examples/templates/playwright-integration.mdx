@@ -1,0 +1,279 @@
+---
+title: "Playwright 集成"
+description: "高级示例，展示 Playwright 和 Browser-Use 如何协同工作。"
+icon: "wand-magic-sparkles"
+mode: "wide"
+---
+
+## 主要特性
+
+1. Browser-Use 和 Playwright 通过 CDP 共享同一个 Chrome 实例
+2. 使用 Playwright 执行操作，继续使用 Browser-Use 操作
+3. 让代理调用 Playwright 函数（如截图或点击选择器）进行确定性步骤
+
+## 安装
+
+```bash
+uv pip install playwright aiohttp
+```
+
+## 完整示例
+
+```python
+import asyncio
+import os
+import subprocess
+import sys
+import tempfile
+
+from pydantic import BaseModel, Field
+
+# 先检查必需的依赖
+try:
+    import aiohttp
+    from playwright.async_api import Browser, Page, async_playwright
+except ImportError as e:
+    print(f'❌ 此示例缺少依赖：{e}')
+    print('需要：playwright aiohttp')
+    print('安装：uv add playwright aiohttp')
+    print('同时运行：playwright install chromium')
+    sys.exit(1)
+
+from browser_use import Agent, BrowserSession, ChatOpenAI, Tools
+from browser_use.agent.views import ActionResult
+
+# 全局 Playwright 浏览器实例 - 在自定义操作之间共享
+playwright_browser: Browser | None = None
+playwright_page: Page | None = None
+
+# 自定义操作参数模型
+class PlaywrightFillFormAction(BaseModel):
+    """Playwright 表单填写操作的参数。"""
+    customer_name: str = Field(..., description='要填写的客户名称')
+    phone_number: str = Field(..., description='要填写的电话号码')
+    email: str = Field(..., description='要填写的电子邮件地址')
+    size_option: str = Field(..., description='尺寸选项（small/medium/large）')
+
+class PlaywrightScreenshotAction(BaseModel):
+    """Playwright 截图操作的参数。"""
+    filename: str = Field(default='playwright_screenshot.png', description='截图文件名')
+    quality: int | None = Field(default=None, description='JPEG 质量（1-100），仅适用于 .jpg/.jpeg 文件')
+
+class PlaywrightGetTextAction(BaseModel):
+    """使用 Playwright 选择器获取文本的参数。"""
+    selector: str = Field(..., description='要获取文本的 CSS 选择器。使用"title"获取页面标题。')
+
+async def start_chrome_with_debug_port(port: int = 9222):
+    """启动启用了远程调试的 Chrome。"""
+    user_data_dir = tempfile.mkdtemp(prefix='chrome_cdp_')
+    
+    # Chrome 启动命令
+    chrome_paths = [
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        'chrome',
+        'chromium',
+    ]
+    
+    chrome_exe = None
+    for path in chrome_paths:
+        if os.path.exists(path) or path in ['chrome', 'chromium']:
+            try:
+                test_proc = await asyncio.create_subprocess_exec(
+                    path, '--version', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+                await test_proc.wait()
+                chrome_exe = path
+                break
+            except Exception:
+                continue
+    
+    if not chrome_exe:
+        raise RuntimeError('❌ 未找到 Chrome。请安装 Chrome 或 Chromium。')
+    
+    cmd = [
+        chrome_exe,
+        f'--remote-debugging-port={port}',
+        f'--user-data-dir={user_data_dir}',
+        '--no-first-run',
+        '--no-default-browser-check',
+        '--disable-extensions',
+        'about:blank',
+    ]
+    
+    process = await asyncio.create_subprocess_exec(*cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    # 等待 Chrome 启动和 CDP 就绪
+    cdp_ready = False
+    for _ in range(20):  # 20 秒超时
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f'http://localhost:{port}/json/version', timeout=aiohttp.ClientTimeout(total=1)
+                ) as response:
+                    if response.status == 200:
+                        cdp_ready = True
+                        break
+        except Exception:
+            pass
+        await asyncio.sleep(1)
+    
+    if not cdp_ready:
+        process.terminate()
+        raise RuntimeError('❌ Chrome 无法以 CDP 模式启动')
+    
+    return process
+
+async def connect_playwright_to_cdp(cdp_url: str):
+    """将 Playwright 连接到 Browser-Use 使用的同一个 Chrome 实例。"""
+    global playwright_browser, playwright_page
+    
+    playwright = await async_playwright().start()
+    playwright_browser = await playwright.chromium.connect_over_cdp(cdp_url)
+    
+    if playwright_browser and playwright_browser.contexts and playwright_browser.contexts[0].pages:
+        playwright_page = playwright_browser.contexts[0].pages[0]
+    elif playwright_browser:
+        context = await playwright_browser.new_context()
+        playwright_page = await context.new_page()
+
+# 创建使用 Playwright 函数的自定义工具
+tools = Tools()
+
+@tools.registry.action(
+    "使用 Playwright 的精确表单填写功能填写表单。这使用 Playwright 选择器进行可靠的表单交互。",
+    param_model=PlaywrightFillFormAction,
+)
+async def playwright_fill_form(params: PlaywrightFillFormAction, browser_session: BrowserSession):
+    """使用 Playwright 高精度填写表单的自定义操作。"""
+    try:
+        if not playwright_page:
+            return ActionResult(error='Playwright 未连接。请先运行设置。')
+        
+        await playwright_page.wait_for_selector('input[name="custname"]', timeout=10000)
+        await playwright_page.fill('input[name="custname"]', params.customer_name)
+        await playwright_page.fill('input[name="custtel"]', params.phone_number)
+        await playwright_page.fill('input[name="custemail"]', params.email)
+        
+        # 处理尺寸选择
+        size_select = playwright_page.locator('select[name="size"]')
+        size_radio = playwright_page.locator(f'input[name="size"][value="{params.size_option}"]')
+        
+        if await size_select.count() > 0:
+            await playwright_page.select_option('select[name="size"]', params.size_option)
+        elif await size_radio.count() > 0:
+            await playwright_page.check(f'input[name="size"][value="{params.size_option}"]')
+        
+        form_data = {}
+        form_data['name'] = await playwright_page.input_value('input[name="custname"]')
+        form_data['phone'] = await playwright_page.input_value('input[name="custtel"]')
+        form_data['email'] = await playwright_page.input_value('input[name="custemail"]')
+        
+        success_msg = f'✅ 使用 Playwright 成功填写表单：{form_data}'
+        return ActionResult(
+            extracted_content=success_msg, include_in_memory=True, long_term_memory=f'填写的表单：{form_data}'
+        )
+    
+    except Exception as e:
+        error_msg = f'❌ Playwright 表单填写失败：{str(e)}'
+        return ActionResult(error=error_msg)
+
+@tools.registry.action(
+    "使用 Playwright 的截图功能以高质量和高精度进行截图。",
+    param_model=PlaywrightScreenshotAction,
+)
+async def playwright_screenshot(params: PlaywrightScreenshotAction, browser_session: BrowserSession):
+    """使用 Playwright 高级截图功能。"""
+    try:
+        if not playwright_page:
+            return ActionResult(error='Playwright 未连接。')
+        
+        screenshot_kwargs = {'path': params.filename, 'full_page': True}
+        if params.quality is not None and params.filename.lower().endswith(('.jpg', '.jpeg')):
+            screenshot_kwargs['quality'] = params.quality
+        
+        await playwright_page.screenshot(**screenshot_kwargs)
+        
+        success_msg = f'✅ 使用 Playwright 将截图保存为 {params.filename}'
+        return ActionResult(
+            extracted_content=success_msg, include_in_memory=True, long_term_memory=f'截图保存：{params.filename}'
+        )
+    
+    except Exception as e:
+        error_msg = f'❌ Playwright 截图失败：{str(e)}'
+        return ActionResult(error=error_msg)
+
+async def main():
+    """演示 Browser-Use + Playwright 集成的主函数。"""
+    print('🚀 高级 Playwright + Browser-Use 集成演示')
+    
+    chrome_process = None
+    try:
+        # 步骤 1：启动带 CDP 调试的 Chrome
+        chrome_process = await start_chrome_with_debug_port()
+        cdp_url = 'http://localhost:9222'
+        
+        # 步骤 2：将 Playwright 连接到同一个 Chrome 实例
+        await connect_playwright_to_cdp(cdp_url)
+        
+        # 步骤 3：创建连接到同一个 Chrome 的 Browser-Use 会话
+        browser_session = BrowserSession(cdp_url=cdp_url)
+        
+        # 步骤 4：创建带有我们的 Playwright 驱动工具的 AI 代理
+        agent = Agent(
+            task="""
+            请帮我演示 Browser-Use 和 Playwright 之间的集成：
+            
+            1. 首先，导航到 https://httpbin.org/forms/post
+            2. 使用 'playwright_fill_form' 操作填写表单：
+               - 客户名称："Alice Johnson"
+               - 电话："555-9876"
+               - 邮箱："alice@demo.com"
+               - 尺寸："large"
+            3. 使用 'playwright_screenshot' 操作截图并保存为 "form_demo.png"
+            4. 使用 'playwright_get_text' 操作使用选择器 "title" 提取页面标题
+            5. 最后，提交表单并告诉我发生了什么
+            
+            这演示了 Browser-Use AI 如何编排任务，同时使用 Playwright 的精确功能进行特定操作。
+            """,
+            llm=ChatOpenAI(model='gpt-4.1-mini'),
+            tools=tools,
+            browser_session=browser_session,
+        )
+        
+        print('🎯 启动带有自定义 Playwright 操作的 AI 代理...')
+        
+        # 步骤 5：运行代理 - 它将同时使用 Browser-Use 操作和我们自定义的 Playwright 操作
+        result = await agent.run()
+        
+        print(f'✅ 集成演示完成！结果：{result}')
+        await asyncio.sleep(2)
+    
+    except Exception as e:
+        print(f'❌ 错误：{e}')
+        raise
+    
+    finally:
+        # 清理资源
+        if playwright_browser:
+            await playwright_browser.close()
+        
+        if chrome_process:
+            chrome_process.terminate()
+            try:
+                await asyncio.wait_for(chrome_process.wait(), 5)
+            except TimeoutError:
+                chrome_process.kill()
+        
+        print('✅ 清理完成')
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+## 相关资源
+
+- [Playwright 官方文档](https://playwright.dev/)
+- [自定义工具](/customize/tools/add.mdx)
+- [工具基础](/customize/tools/basics.mdx)

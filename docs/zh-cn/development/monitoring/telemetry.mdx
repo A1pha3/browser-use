@@ -1,0 +1,70 @@
+---
+title: "遥测数据"
+description: "了解 Browser Use 的遥测数据收集。"
+icon: "chart-mixed"
+mode: "wide"
+---
+
+## 概述
+
+Browser Use 在 MIT 许可证下免费使用。为了帮助我们持续改进该库，我们使用 [PostHog](https://posthog.com) 收集匿名使用数据。这些信息帮助我们了解库的使用方式、更快地修复错误，并优先考虑新功能。
+
+<Note>
+即使启用，遥测数据也不会影响库的性能。代码可在 [遥测服务](https://github.com/browser-use/browser-use/tree/main/browser_use/telemetry) 中查看。
+</Note>
+
+## 收集的数据类型
+
+我们收集的数据包括：
+
+- **使用统计**：功能使用频率、最常用的参数配置
+- **性能指标**：执行时间、内存使用、错误率
+- **错误报告**：异常类型、堆栈跟踪、发生频率
+
+## 退出方式
+
+你可以通过设置环境变量禁用遥测数据收集：
+
+```bash .env
+ANONYMIZED_TELEMETRY=false
+```
+
+或者在你的 Python 代码中：
+
+```python
+import os
+os.environ["ANONYMIZED_TELEMETRY"] = "false"
+```
+
+## 数据隐私
+
+### 匿名化处理
+
+所有收集的数据都经过匿名化处理，不包含：
+- 个人身份信息
+- API Key 或认证令牌
+- 具体任务描述
+- 屏幕截图或页面内容
+
+### 数据安全
+
+遥测数据通过加密连接传输，并存储在符合安全标准的服务器上。
+
+## 常见问题
+
+### Q: 遥测会影响性能吗？
+
+A: 不会。遥测数据收集在后台异步进行，对库的性能影响为零。
+
+### Q: 如何确认遥测已禁用？
+
+A: 设置 `ANONYMIZED_TELEMETRY=false` 环境变量后，遥测数据将不再发送。
+
+### Q: 可以查看收集的数据吗？
+
+A: 不可以。所有数据都是匿名聚合的，无法追溯到个人用户。
+
+## 相关资源
+
+- [GitHub 遥测代码](https://github.com/browser-use/browser-use/tree/main/browser_use/telemetry)
+- [PostHog 官网](https://posthog.com)

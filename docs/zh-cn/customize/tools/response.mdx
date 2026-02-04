@@ -1,0 +1,125 @@
+---
+title: "工具响应格式"
+description: "学习如何从工具返回结果。"
+icon: "arrow-turn-down-left"
+mode: "wide"
+---
+
+## 概述
+
+工具可以使用 `ActionResult` 类或简单字符串返回结果。
+
+## 返回类型
+
+### 字符串返回
+
+```python
+@tools.action('我的工具')
+def my_tool() -> str:
+    return "任务成功完成"
+```
+
+### ActionResult 返回
+
+```python
+@tools.action('高级工具')
+def advanced_tool() -> ActionResult:
+    return ActionResult(
+        extracted_content="主结果",
+        long_term_memory="记住此信息",
+        error="出了点问题",
+        is_done=True,
+        success=True,
+        attachments=["file.pdf"],
+    )
+```
+
+## ActionResult 属性
+
+| 属性 | 默认值 | 说明 |
+|-----|-------|------|
+| `extracted_content` | `None` | 传递给 LLM 的主要结果，等同于返回字符串 |
+| `include_extracted_content_only_once` | `False` | 对于大内容，设置为 True 仅包含一次 |
+| `long_term_memory` | `None` | 始终包含在 LLM 输入中，用于所有后续步骤 |
+| `error` | `None` | 错误消息，异常会被自动捕获并设置 |
+| `is_done` | `False` | 工具完成整个任务 |
+| `success` | `None` | 任务成功（仅在 `is_done=True` 时有效） |
+| `attachments` | `None` | 要向用户显示的文件 |
+| `metadata` | `None` | 调试/可观测性数据 |
+
+## 为什么要区分 `extracted_content` 和 `long_term_memory`？
+
+通过这个你可以控制 LLM 的上下文。
+
+### 1. 始终在上下文中包含简短内容
+
+```python
+def simple_tool() -> str:
+    return "Hello, world!"  # 保留在上下文中供所有后续步骤使用
+```
+
+### 2. 显示长内容一次，在上下文中记住子集
+
+```python
+return ActionResult(
+    extracted_content="[500 行产品数据...]",     # 向 LLM 显示一次
+    include_extracted_content_only_once=True,               # 不再显示完整输出
+    long_term_memory="找到 50 个产品",        # 仅这个在后续步骤中
+)
+```
+
+我们保存完整的 `extracted_content` 到文件，LLM 可以在后续步骤中读取。
+
+### 3. 不显示长内容，在上下文中记住子集
+
+```python
+return ActionResult(
+    extracted_content="[500 行产品数据...]",      # LLM 永远不会看到，因为 `long_term_memory` 覆盖了它且未使用 `include_extracted_content_only_once`
+    long_term_memory="保存用户喜欢的产品",      # 这个在后续步骤中显示给 LLM
+)
+```
+
+## 终止代理
+
+设置 `is_done=True` 完全停止代理。当你的工具完成整个任务时使用：
+
+```python
+@tools.action(description='完成任务')
+def finish_task() -> ActionResult:
+    return ActionResult(
+        extracted_content="任务完成！",
+        is_done=True,        # 停止代理
+        success=True,         # 任务成功
+    )
+```
+
+## 完整示例
+
+```python
+from browser_use import Tools, ActionResult
+
+tools = Tools()
+
+@tools.action('获取产品列表')
+def get_products() -> ActionResult:
+    products = fetch_products_from_api()
+    return ActionResult(
+        extracted_content=str(products),      # 显示给 LLM
+        long_term_memory=f"找到 {len(products)} 个产品",  # 记住的摘要
+        include_extracted_content_only_once=True,  # 后续步骤不再显示完整列表
+    )
+
+@tools.action('完成任务')
+def complete_task() -> ActionResult:
+    return ActionResult(
+        extracted_content="所有任务已完成",
+        is_done=True,
+        success=True,
+    )
+```
+
+## 相关资源
+
+- [添加工具](./add.mdx)
+- [移除工具](./remove.mdx)
+- [可用工具列表](./available.mdx)

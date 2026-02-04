@@ -1,0 +1,106 @@
+---
+title: "真实浏览器"
+description: "连接你现有的 Chrome 浏览器以保留认证状态。"
+icon: "arrow-right-to-bracket"
+---
+
+## 概述
+
+连接你现有的 Chrome 浏览器，保留认证状态（Cookie、扩展程序、书签等）。
+
+## 基础示例
+
+```python
+import asyncio
+from browser_use import Agent, Browser, ChatOpenAI
+
+# 连接到现有的 Chrome 浏览器
+browser = Browser(
+    executable_path='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    user_data_dir='~/Library/Application Support/Google/Chrome',
+    profile_directory='Default',
+)
+
+agent = Agent(
+    task='访问 https://duckduckgo.com 并搜索 "browser-use 创始人"',
+    browser=browser,
+    llm=ChatOpenAI(model='gpt-4.1-mini'),
+)
+
+async def main():
+    await agent.run()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+<Note>
+**注意**：运行此示例前需要完全关闭 Chrome。此外，Google 目前阻止此方法，因此我们使用 DuckDuckGo。
+</Note>
+
+## 工作原理
+
+| 参数 | 说明 |
+|-----|------|
+| `executable_path` | Chrome 安装路径 |
+| `user_data_dir` | Chrome 配置文件夹（保留 Cookie、扩展程序、书签） |
+| `profile_directory` | 特定配置名称（Default、Profile 1 等） |
+
+## 平台路径
+
+```python
+# macOS
+executable_path='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+user_data_dir='~/Library/Application Support/Google/Chrome'
+
+# Windows
+executable_path='C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+user_data_dir='%LOCALAPPDATA%\\Google\\Chrome\\User Data'
+
+# Linux
+executable_path='/usr/bin/google-chrome'
+user_data_dir='~/.config/google-chrome'
+```
+
+## 使用场景
+
+### 1. 保持登录状态
+
+```python
+browser = Browser(
+    executable_path='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    user_data_dir='~/Library/Application Support/Google/Chrome',
+    profile_directory='Default',  # 或 'Profile 1' 等
+)
+```
+
+### 2. 使用特定配置
+
+```python
+browser = Browser(
+    executable_path='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    user_data_dir='~/Library/Application Support/Google/Chrome',
+    profile_directory='Profile 1',  # 使用其他配置
+)
+```
+
+### 3. 无痕模式
+
+```python
+browser = Browser(
+    executable_path='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    user_data_dir=None,  # 无痕模式，不保存数据
+)
+```
+
+## 注意事项
+
+1. **关闭 Chrome**：运行代码前确保 Chrome 完全关闭
+2. **权限问题**：某些系统可能需要管理员权限
+3. **端口冲突**：确保没有其他 Chrome 实例正在运行
+
+## 相关资源
+
+- [浏览器基础](./basics.mdx)
+- [远程浏览器](./remote.mdx)
+- [所有参数](./all-parameters.mdx)

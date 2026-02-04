@@ -1,0 +1,177 @@
+---
+title: "所有参数"
+description: "代理配置选项的完整参考。"
+icon: "sliders"
+mode: "wide"
+---
+
+## 可用参数
+
+### 核心设置
+
+| 参数 | 类型 | 说明 |
+|-----|------|------|
+| `tools` | `Tools` | 代理可调用的工具注册表 |
+| `skills` 或 `skill_ids` | `list[str]` | 要加载的技能 ID 列表 |
+| `browser` | `Browser` | 指定浏览器设置的对象 |
+| `output_model_schema` | `Type[BaseModel]` | 用于结构化输出验证的 Pydantic 模型类 |
+
+### 视觉和处理
+
+| 参数 | 类型 | 默认值 | 说明 |
+|-----|------|---------|------|
+| `use_vision` | `str` 或 `bool` | `"auto"` | 视觉模式 |
+| `vision_detail_level` | `str` | `"auto"` | 截图详细级别（`"low"`、`"high"`、`"auto"`） |
+| `page_extraction_llm` | `BaseChatModel` | 同 `llm` | 用于页面内容提取的独立 LLM 模型 |
+
+### 降级和恢复
+
+| 参数 | 类型 | 默认值 | 说明 |
+|-----|------|---------|------|
+| `fallback_llm` | `BaseChatModel` | `None` | 主 LLM 失败时的备用 LLM |
+
+### 操作和行为
+
+| 参数 | 类型 | 默认值 | 说明 |
+|-----|------|---------|------|
+| `initial_actions` | `list[dict]` | `None` | 在主任务之前运行的操作列表 |
+| `max_actions_per_step` | `int` | `4` | 每步最大操作数 |
+| `max_failures` | `int` | `3` | 错误步骤的最大重试次数 |
+| `final_response_after_failure` | `bool` | `True` | 是否在达到最大失败次数后强制最终模型调用 |
+| `use_thinking` | `bool` | `True` | 是否使用内部"思考"字段进行显式推理 |
+| `flash_mode` | `bool` | `False` | 快速模式，跳过评估和思考过程 |
+
+### 系统消息
+
+| 参数 | 类型 | 说明 |
+|-----|------|------|
+| `override_system_message` | `str` | 完全替换默认系统提示词 |
+| `extend_system_message` | `str` | 添加额外指令到默认系统提示词 |
+
+### 文件和数据管理
+
+| 参数 | 类型 | 说明 |
+|-----|------|------|
+| `save_conversation_path` | `str` | 保存完整对话历史的路径 |
+| `save_conversation_path_encoding` | `str` | 保存对话的编码格式（默认：`"utf-8"`） |
+| `available_file_paths` | `list[str]` | 代理可访问的文件路径列表 |
+| `sensitive_data` | `dict` | 需要小心处理的敏感数据字典 |
+
+### 视觉输出
+
+| 参数 | 类型 | 默认值 | 说明 |
+|-----|------|---------|------|
+| `generate_gif` | `bool` 或 `str` | `False` | 生成代理操作的 GIF |
+| `include_attributes` | `list[str]` | `["id", "name", "placeholder", "type", "class"]` | 要包含在页面分析中的 HTML 属性列表 |
+
+### 性能和限制
+
+| 参数 | 类型 | 默认值 | 说明 |
+|-----|------|---------|------|
+| `max_history_items` | `int` 或 `None` | `None` | 保留在 LLM 内存中的最后步骤数 |
+| `llm_timeout` | `int` | `90` | LLM 调用的超时时间（秒） |
+| `step_timeout` | `int` | `120` | 每步的超时时间（秒） |
+| `directly_open_url` | `bool` | `True` | 如果检测到 URL，是否直接打开 |
+
+### 高级选项
+
+| 参数 | 类型 | 默认值 | 说明 |
+|-----|------|---------|------|
+| `calculate_cost` | `bool` | `False` | 计算和跟踪 API 成本 |
+| `display_files_in_done_text` | `bool` | `True` | 在完成消息中显示文件信息 |
+
+### 向后兼容
+
+| 参数 | 别名 |
+|-----|------|
+| `controller` | `tools` |
+| `browser_session` | `browser` |
+
+## 环境变量
+
+以下环境变量可用于调整代理和浏览器行为，无需修改代码。它们对于调试、慢速网络或部署级调优特别有用。
+
+### 代理超时
+
+| 变量 | 默认值 | 说明 |
+|-----|--------|------|
+| `TIMEOUT_AgentEventBusStop` | `3.0` | 代理事件总线在关闭期间完成处理待处理事件的超时时间（秒） |
+
+### 浏览器操作超时
+
+| 变量 | 默认值 | 说明 |
+|-----|--------|------|
+| `TIMEOUT_NavigateToUrlEvent` | `15.0` | 页面导航超时 |
+| `TIMEOUT_ClickElementEvent` | `15.0` | 点击元素超时 |
+| `TIMEOUT_ClickCoordinateEvent` | `15.0` | 坐标点击超时 |
+| `TIMEOUT_TypeTextEvent` | `60.0` | 输入文本超时（大型输入时间更长） |
+| `TIMEOUT_ScrollEvent` | `8.0` | 滚动超时 |
+| `TIMEOUT_ScrollToTextEvent` | `15.0` | 滚动查找文本超时 |
+| `TIMEOUT_SendKeysEvent` | `60.0` | 发送键盘快捷键超时 |
+| `TIMEOUT_UploadFileEvent` | `30.0` | 文件上传超时 |
+| `TIMEOUT_GetDropdownOptionsEvent` | `15.0` | 获取下拉选项超时 |
+| `TIMEOUT_SelectDropdownOptionEvent` | `8.0` | 选择下拉选项超时 |
+| `TIMEOUT_GoBackEvent` | `15.0` | 浏览器后退导航超时 |
+| `TIMEOUT_GoForwardEvent` | `15.0` | 浏览器前进导航超时 |
+| `TIMEOUT_RefreshEvent` | `15.0` | 页面刷新超时 |
+| `TIMEOUT_WaitEvent` | `60.0` | 显式等待操作超时 |
+| `TIMEOUT_ScreenshotEvent` | `15.0` | 截图超时 |
+| `TIMEOUT_BrowserStateRequestEvent` | `30.0` | 获取浏览器状态/DOM 超时 |
+
+### 浏览器生命周期超时
+
+| 变量 | 默认值 | 说明 |
+|-----|--------|------|
+| `TIMEOUT_BrowserStartEvent` | `30.0` | 启动浏览器会话超时 |
+| `TIMEOUT_BrowserStopEvent` | `45.0` | 停止浏览器会话超时 |
+| `TIMEOUT_BrowserLaunchEvent` | `30.0` | 启动浏览器进程超时 |
+| `TIMEOUT_BrowserKillEvent` | `30.0` | 终止浏览器进程超时 |
+| `TIMEOUT_BrowserConnectedEvent` | `30.0` | CDP 连接超时 |
+| `TIMEOUT_BrowserStoppedEvent` | `30.0` | 浏览器停止确认超时 |
+| `TIMEOUT_BrowserErrorEvent` | `30.0` | 浏览器错误事件超时 |
+
+### 标签页管理超时
+
+| 变量 | 默认值 | 说明 |
+|-----|--------|------|
+| `TIMEOUT_SwitchTabEvent` | `10.0` | 切换标签页超时 |
+| `TIMEOUT_CloseTabEvent` | `10.0` | 关闭标签页超时 |
+| `TIMEOUT_TabCreatedEvent` | `30.0` | 标签页创建事件超时 |
+| `TIMEOUT_TabClosedEvent` | `10.0` | 标签页关闭事件超时 |
+| `TIMEOUT_AgentFocusChangedEvent` | `10.0` | 焦点更改事件超时 |
+| `TIMEOUT_TargetCrashedEvent` | `10.0` | 崩溃事件超时 |
+
+### 导航事件超时
+
+| 变量 | 默认值 | 说明 |
+|-----|--------|------|
+| `TIMEOUT_NavigationStartedEvent` | `30.0` | 导航开始事件超时 |
+| `TIMEOUT_NavigationCompleteEvent` | `30.0` | 导航完成事件超时 |
+
+### 存储和下载超时
+
+| 变量 | 默认值 | 说明 |
+|-----|--------|------|
+| `TIMEOUT_SaveStorageStateEvent` | `45.0` | 保存 Cookie/localStorage 超时 |
+| `TIMEOUT_StorageStateSavedEvent` | `30.0` | 存储保存确认超时 |
+| `TIMEOUT_LoadStorageStateEvent` | `45.0` | 加载存储状态超时 |
+| `TIMEOUT_StorageStateLoadedEvent` | `30.0` | 存储加载确认超时 |
+| `TIMEOUT_FileDownloadedEvent` | `30.0` | 文件下载事件超时 |
+
+## 使用示例
+
+```bash
+# 增加慢速网络或复杂页面的超时时间
+export TIMEOUT_NavigateToUrlEvent=30.0
+export TIMEOUT_TypeTextEvent=120.0
+export TIMEOUT_BrowserStateRequestEvent=60.0
+
+# 增加代理关闭超时
+export TIMEOUT_AgentEventBusStop=10.0
+```
+
+## 相关资源
+
+- [代理基础](./basics.mdx)
+- [输出格式](./output-format.mdx)
+- [提示词指南](./prompting-guide.mdx)

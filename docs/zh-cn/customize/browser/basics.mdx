@@ -1,0 +1,316 @@
+---
+title: "浏览器基础"
+description: "学习如何配置和管理浏览器实例。"
+icon: "globe"
+---
+
+## 概述
+
+`Browser` 类用于配置和管理浏览器实例。通过调整各种参数，你可以控制浏览器的行为、外观和功能。
+
+## 基础用法
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+
+# 创建浏览器实例
+browser = Browser(
+    headless=False,  # 显示浏览器窗口
+    window_size={'width': 1000, 'height': 700},  # 设置窗口大小
+)
+
+# 创建代理并运行
+agent = Agent(
+    task='搜索 Browser Use',
+    browser=browser,
+    llm=ChatBrowserUse(),
+)
+
+async def main():
+    await agent.run()
+```
+
+## 核心配置
+
+### 浏览器显示模式
+
+```python
+# 显示浏览器窗口（用于调试）
+browser = Browser(headless=False)
+
+# 无头模式（用于生产环境，不显示浏览器）
+browser = Browser(headless=True)
+
+# 自动检测（默认）
+browser = Browser(headless=None)
+```
+
+### 窗口大小
+
+```python
+# 设置窗口尺寸
+browser = Browser(
+    window_size={'width': 1920, 'height': 1080},
+)
+
+# 设置视口大小（内容区域）
+browser = Browser(
+    viewport={'width': 1280, 'height': 720},
+)
+
+# 禁用视口模拟
+browser = Browser(no_viewport=True)
+
+# 设置窗口位置
+browser = Browser(
+    window_position={'width': 0, 'height': 0},
+)
+
+# 设置设备缩放因子（DPI）
+browser = Browser(device_scale_factor=2.0)
+```
+
+## 用户数据和配置
+
+```python
+# 使用临时目录（无痕模式）
+browser = Browser(user_data_dir=None)
+
+# 使用指定的用户数据目录
+browser = Browser(
+    user_data_dir='~/.config/browser-use',
+)
+
+# 指定配置目录
+browser = Browser(
+    profile_directory='Default',  # 默认配置
+    # profile_directory='Profile 1',  # 其他配置
+)
+
+# 从文件加载浏览器状态（Cookie、localStorage）
+browser = Browser(
+    storage_state='./cookies.json',  # 文件路径
+    # 或直接传入字典
+    # storage_state={'cookies': [...], 'origins': [...]}
+)
+```
+
+## 网络和代理
+
+```python
+from browser_use.browser import ProxySettings
+
+# 配置代理
+browser = Browser(
+    proxy=ProxySettings(
+        server="http://proxy-server:8080",
+        bypass="localhost,127.0.0.1",
+        username="proxy-user",
+        password="proxy-pass"
+    ),
+)
+```
+
+### 访问控制
+
+```python
+# 限制只能访问特定域名
+browser = Browser(
+    allowed_domains=[
+        '*.example.com',      # 允许所有子域名
+        'https://trusted.com',  # 允许特定 URL
+        'chrome-extension://*',  # 允许扩展程序
+    ]
+)
+
+# 禁止访问特定域名
+browser = Browser(
+    prohibited_domains=[
+        'pornhub.com',
+        '*.gambling-site.net',
+    ]
+)
+```
+
+<Note>
+当同时设置 `allowed_domains` 和 `prohibited_domains` 时，`allowed_domains` 优先。
+</Note>
+
+## 权限和功能
+
+```python
+# 授予浏览器权限
+browser = Browser(
+    permissions=[
+        'clipboardReadWrite',  # 剪贴板读写
+        'notifications',       # 通知
+        # 'camera',             # 摄像头
+        # 'microphone',          # 麦克风
+        # 'geolocation',        # 地理位置
+    ]
+)
+
+# 添加自定义 HTTP 请求头
+browser = Browser(
+    headers={
+        'X-Custom-Header': 'value',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+    }
+)
+```
+
+## 下载配置
+
+```python
+browser = Browser(
+    accept_downloads=True,         # 自动接受下载
+    downloads_path='./downloads',   # 下载目录
+    auto_download_pdfs=True,       # 自动下载 PDF
+)
+```
+
+## 浏览器可执行文件
+
+```python
+# macOS
+browser = Browser(
+    executable_path='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+)
+
+# Windows
+browser = Browser(
+    executable_path='C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+)
+
+# Linux
+browser = Browser(
+    executable_path='/usr/bin/google-chrome'
+)
+
+# 使用特定频道
+browser = Browser(
+    channel='chromium',  # chromium, chrome, chrome-beta, msedge 等
+)
+```
+
+### 自定义启动参数
+
+```python
+browser = Browser(
+    args=[
+        '--disable-gpu',                    # 禁用 GPU 加速
+        '--no-sandbox',                     # 禁用沙箱（需要 root 权限时）
+        '--disable-dev-shm-usage',          # 禁用 /dev/shm 使用
+        '--window-size=1920,1080',          # 窗口大小
+    ],
+    ignore_default_args=['--enable-automation'],  # 忽略默认参数
+)
+```
+
+## 时间和性能
+
+```python
+browser = Browser(
+    minimum_wait_page_load_time=0.5,     # 页面加载后最小等待时间（秒）
+    wait_for_network_idle_page_load_time=1.0,  # 网络空闲等待时间（秒）
+    wait_between_actions=0.5,            # 操作之间等待时间（秒）
+)
+```
+
+## AI 和视觉配置
+
+```python
+browser = Browser(
+    highlight_elements=True,             # 高亮可交互元素
+    paint_order_filtering=True,          # 启用 paint order 过滤
+)
+```
+
+## 录制和调试
+
+```python
+browser = Browser(
+    record_video_dir='./videos',         # 视频录制目录
+    record_video_size={'width': 1280, 'height': 720},
+    record_video_framerate=30,           # 帧率
+    record_har_path='./network.har',    # 网络追踪文件
+    record_har_content='embed',          # embed, omit, attach
+    traces_dir='./traces',               # 调试追踪目录
+    devtools=True,                       # 自动打开 DevTools
+)
+```
+
+## 高级选项
+
+```python
+# ⚠️ 不推荐：禁用浏览器安全功能
+browser = Browser(disable_security=True)
+
+# ⚠️ 不推荐：强制一致渲染
+browser = Browser(deterministic_rendering=True)
+```
+
+## 完整配置示例
+
+```python
+from browser_use import Browser, ChatBrowserUse
+
+browser = Browser(
+    # 显示模式
+    headless=False,
+    window_size={'width': 1920, 'height': 1080},
+    window_position={'width': 0, 'height': 0},
+
+    # 用户数据
+    user_data_dir='~/.config/browser-use',
+    profile_directory='Default',
+    storage_state='./state.json',
+
+    # 网络
+    proxy=None,
+    permissions=['clipboardReadWrite', 'notifications'],
+
+    # 浏览器
+    executable_path=None,
+    channel=None,
+
+    # 下载
+    accept_downloads=True,
+    downloads_path='./downloads',
+    auto_download_pdfs=True,
+
+    # 性能
+    minimum_wait_page_load_time=0.25,
+    wait_for_network_idle_page_load_time=0.5,
+    wait_between_actions=0.5,
+
+    # AI
+    highlight_elements=True,
+    paint_order_filtering=True,
+
+    # 录制
+    record_video_dir=None,
+    traces_dir=None,
+)
+```
+
+## 浏览器与 BrowserSession
+
+`Browser` 是 `BrowserSession` 的别名，它们是同一个类：
+
+```python
+from browser_use import Browser, BrowserSession
+
+# 两者完全相同
+browser1 = Browser(headless=False)
+browser2 = BrowserSession(headless=False)
+
+# 类型检查
+print(type(browser1) == type(browser2))  # True
+```
+
+## 相关资源
+
+- [远程浏览器](./remote-browser.mdx)
+- [真实浏览器](./real-browser.mdx)
+- [Agent 配置](/customize/agent/all-parameters)

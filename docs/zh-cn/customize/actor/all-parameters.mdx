@@ -1,0 +1,122 @@
+---
+title: "所有参数"
+description: "Browser Actor 类、方法、参数的完整 API 参考，包括 BrowserSession、Page、Element 和 Mouse。"
+icon: "list"
+mode: "wide"
+---
+
+## Browser（BrowserSession）
+
+主浏览器会话管理器。
+
+### 核心方法
+
+```python
+from browser_use import Browser
+
+browser = Browser()
+await browser.start()
+
+# 页面管理
+page = await browser.new_page("https://example.com")
+pages = await browser.get_pages()
+current = await browser.get_current_page()
+await browser.close_page(page)
+
+# 停止浏览器会话
+await browser.stop()
+```
+
+### 构造函数参数
+
+有关完整配置选项，请参阅[浏览器参数](../browser/all-parameters)。
+
+## Page
+
+用于页面级操作的浏览器标签页或 iframe。
+
+### 导航方法
+
+| 方法 | 说明 |
+|-----|------|
+| `goto(url: str)` | 导航到指定 URL |
+| `go_back()` | 返回上一页 |
+| `go_forward()` | 前进一页 |
+| `reload()` | 刷新页面 |
+
+### 元素查找
+
+| 方法 | 说明 |
+|-----|------|
+| `get_elements_by_css_selector(selector: str) -> list[Element]` | CSS 选择器查找 |
+| `get_element(backend_node_id: int) -> Element` | 通过 CDP 节点 ID 查找 |
+| `get_element_by_prompt(prompt: str, llm) -> Element | None` | AI 驱动查找 |
+| `must_get_element_by_prompt(prompt: str, llm) -> Element` | AI 驱动查找（未找到则报错） |
+
+### JavaScript 和控件
+
+| 方法 | 说明 |
+|-----|------|
+| `evaluate(page_function: str, *args) -> str` | 执行 JavaScript（箭头函数格式） |
+| `press(key: str)` | 发送键盘输入（"Enter"、"Control+A"） |
+| `set_viewport_size(width: int, height: int)` | 设置视口大小 |
+| `screenshot(format='jpeg', quality=None) -> str` | 截图 |
+
+### 信息获取
+
+| 方法 | 说明 |
+|-----|------|
+| `get_url() -> str` | 获取当前 URL |
+| `get_title() -> str` | 获取页面标题 |
+| `mouse -> Mouse` | 获取鼠标接口 |
+
+### AI 功能
+
+| 方法 | 说明 |
+|-----|------|
+| `extract_content(prompt: str, structured_output: type[T], llm) -> T` | 提取数据 |
+
+## Element
+
+单个 DOM 元素交互。
+
+### 交互操作
+
+| 方法 | 说明 |
+|-----|------|
+| `click(button='left', click_count=1, modifiers=None)` | 点击元素 |
+| `fill(text: str, clear=True)` | 填充输入框 |
+| `hover()` | 鼠标悬停 |
+| `focus()` | 聚焦元素 |
+| `check()` | 切换复选框/单选框状态 |
+| `select_option(values: str | list[str])` | 选择下拉选项 |
+| `drag_to(target: Element | Position)` | 拖放操作 |
+
+### 属性获取
+
+| 方法 | 说明 |
+|-----|------|
+| `get_attribute(name: str) -> str | None` | 获取属性值 |
+| `get_bounding_box() -> BoundingBox | None` | 获取位置和尺寸 |
+| `get_basic_info() -> ElementInfo` | 获取完整元素信息 |
+| `screenshot(format='jpeg') -> str` | 元素截图 |
+
+## Mouse
+
+基于坐标的鼠标操作。
+
+### 操作方法
+
+| 方法 | 说明 |
+|-----|------|
+| `click(x: int, y: int, button='left', click_count=1)` | 在坐标处点击 |
+| `move(x: int, y: int, steps=1)` | 移动鼠标 |
+| `down(button='left')` | 按下鼠标按钮 |
+| `up(button='left')` | 释放鼠标按钮 |
+| `scroll(x=0, y=0, delta_x=None, delta_y=None)` | 在坐标处滚动 |
+
+## 相关资源
+
+- [Actor 基础](./basics.mdx)
+- [Actor 示例](./examples.mdx)
+- [浏览器基础](/customize/browser/basics)

@@ -1,0 +1,136 @@
+---
+title: "并行代理"
+description: "使用独立的浏览器实例并行运行多个代理。"
+icon: "copy"
+---
+
+## 概述
+
+Browser Use 支持并行运行多个代理，每个代理使用独立的浏览器实例。这对于同时执行多个独立任务非常有用。
+
+```python
+import asyncio
+from browser_use import Agent, Browser, ChatOpenAI
+
+async def main():
+    # 创建 3 个独立的浏览器实例
+    browsers = [
+        Browser(
+            user_data_dir=f'./temp-profile-{i}',
+            headless=False,
+        )
+        for i in range(3)
+    ]
+
+    # 创建 3 个不同任务的代理
+    agents = [
+        Agent(
+            task='在 Google 上搜索"浏览器自动化"',
+            browser=browsers[0],
+            llm=ChatOpenAI(model='gpt-4.1-mini'),
+        ),
+        Agent(
+            task='在 DuckDuckGo 上搜索"AI 代理"',
+            browser=browsers[1],
+            llm=ChatOpenAI(model='gpt-4.1-mini'),
+        ),
+        Agent(
+            task='访问 Wikipedia 并搜索"网页抓取"',
+            browser=browsers[2],
+            llm=ChatOpenAI(model='gpt-4.1-mini'),
+        ),
+    ]
+
+    # 并行运行所有代理
+    tasks = [agent.run() for agent in agents]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    print('🎉 所有代理完成！')
+```
+
+## 使用场景
+
+### 1. 多任务并行执行
+
+```python
+async def parallel_search():
+    browsers = [Browser() for _ in range(5)]
+    
+    queries = [
+        "Python 教程",
+        "JavaScript 最佳实践",
+        "React 组件设计",
+        "Node.js 性能优化",
+        "CSS 布局技巧"
+    ]
+    
+    agents = [
+        Agent(task=f'搜索"{query}"', browser=browser)
+        for query, browser in zip(queries, browsers)
+    ]
+    
+    results = await asyncio.gather(*[a.run() for a in agents])
+    return results
+```
+
+### 2. 数据采集
+
+```python
+async def collect_from_multiple_sources():
+    browsers = [
+        Browser(user_data_dir=f'./profile-{i}')
+        for i in range(3)
+    ]
+    
+    agents = [
+        Agent(
+            task='从 example1.com 提取产品数据',
+            browser=browsers[0]
+        ),
+        Agent(
+            task='从 example2.com 提取产品数据',
+            browser=browsers[1]
+        ),
+        Agent(
+            task='从 example3.com 提取产品数据',
+            browser=browsers[2]
+        ),
+    ]
+    
+    await asyncio.gather(*[a.run() for a in agents])
+```
+
+## 注意事项
+
+<Note>
+这是实验性功能，代理之间可能会发生冲突。
+</Note>
+
+### 资源限制
+
+- 每个浏览器实例消耗内存
+- 系统资源有限，避免创建过多实例
+- 考虑使用 `headless=True` 减少资源使用
+
+### 错误处理
+
+```python
+async def robust_parallel_execution():
+    browsers = [Browser() for _ in range(3)]
+    agents = [Agent(task=f'任务 {i}', browser=b) for i, b in enumerate(browsers)]
+    
+    results = []
+    for agent in agents:
+        try:
+            result = await agent.run()
+            results.append(('success', result))
+        except Exception as e:
+            results.append(('error', str(e)))
+    
+    return results
+```
+
+## 相关资源
+
+- [后续任务](./follow-up-tasks.mdx)
+- [快速代理](./fast-agent.mdx)

@@ -1,0 +1,98 @@
+---
+title: "所有参数"
+description: "CodeAgent 所有配置选项的完整参考。"
+icon: "sliders"
+mode: "wide"
+---
+
+## CodeAgent 参数
+
+### 核心设置
+
+| 参数 | 说明 | 默认值 |
+|-----|------|--------|
+| `task` | 定义代理应完成的任务描述字符串（必需） | - |
+| `llm` | 用于代码生成的 LLM 实例（必需：ChatBrowserUse） | ChatBrowserUse() |
+| `browser` | 用于自动化的浏览器会话对象（可选，未提供则创建） | - |
+| `tools` | 代理可以调用的工具注册表（可选，未提供则创建默认） | - |
+| `max_steps` | 终止前的最大执行步数 | 100 |
+| `max_failures` | 终止前的最大连续错误数 | 8 |
+| `max_validations` | 运行验证代理的最大次数 | 0 |
+
+### 视觉和处理
+
+| 参数 | 说明 | 默认值 |
+|-----|------|--------|
+| `use_vision` | 是否在 LLM 消息中包含截图。`True` 始终包含，`False` 从不包含 | True |
+| `page_extraction_llm` | 用于页面内容提取的单独 LLM 模型（可选，可选择小型快速模型） | 同 `llm` |
+
+### 文件和数据管理
+
+| 参数 | 说明 | 默认值 |
+|-----|------|--------|
+| `file_system` | 用于文件操作的文件系统实例（可选，未提供则创建） | - |
+| `available_file_paths` | 代理可以访问的文件路径列表 | - |
+| `sensitive_data` | 需要小心处理的敏感数据字典 | - |
+
+### 高级选项
+
+| 参数 | 说明 | 默认值 |
+|-----|------|--------|
+| `calculate_cost` | 计算和跟踪 API 成本 | False |
+
+### 向后兼容
+
+| 参数 | 说明 | 默认值 |
+|-----|------|--------|
+| `controller` | `tools` 的别名，用于向后兼容 | - |
+| `browser_session` | `browser` 的别名（已弃用，请使用 `browser`） | - |
+
+## 返回值
+
+`run()` 方法返回包含以下内容的 `NotebookSession` 对象：
+
+| 属性 | 说明 |
+|-----|------|
+| `cells` | 表示每个已执行代码单元的 `CodeCell` 对象列表 |
+| `id` | 唯一会话标识符 |
+| `current_execution_count` | 当前执行计数编号 |
+| `namespace` | 包含当前命名空间状态和所有变量的字典 |
+
+### CodeCell 属性
+
+`session.cells` 中的每个单元格具有：
+
+| 属性 | 说明 |
+|-----|------|
+| `id` | 唯一单元格标识符 |
+| `cell_type` | 单元格类型（'code' 或 'markdown'） |
+| `source` | 执行的代码 |
+| `output` | 代码执行输出（如果有） |
+| `execution_count` | 执行顺序编号 |
+| `status` | 执行状态（'pending'、'running'、'success' 或 'error'） |
+| `error` | 执行失败时的错误消息 |
+| `browser_state` | 执行后的浏览器状态 |
+
+## 使用示例
+
+```python
+session = await agent.run()
+
+# 访问已执行的单元格
+for cell in session.cells:
+    print(f"单元格 {cell.execution_count}: {cell.source}")
+    if cell.error:
+        print(f"错误: {cell.error}")
+    elif cell.output:
+        print(f"输出: {cell.output}")
+
+# 从命名空间访问变量
+variables = session.namespace
+print(f"变量: {list(variables.keys())}")
+```
+
+## 相关资源
+
+- [代码代理基础](./basics.mdx)
+- [代码代理导出](./exporting.mdx)
+- [代码代理输出格式](./output-format.mdx)

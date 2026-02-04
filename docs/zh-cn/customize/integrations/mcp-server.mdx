@@ -1,0 +1,401 @@
+---
+title: "MCP 服务器"
+description: "通过模型上下文协议将 AI 模型连接到 Browser Use。"
+icon: "network"
+---
+
+## 概述
+
+Browser Use 提供了一个托管的**模型上下文协议（MCP）服务器**，使 AI 助手能够控制浏览器自动化。支持任何基于 HTTP 的 MCP 客户端，包括 Claude Code。
+
+**MCP 服务器 URL：** `https://api.browser-use.com/mcp`
+
+这是一个**基于 HTTP 的 MCP 服务器**，专为云端集成和远程访问而设计。如果你需要用于 Claude Desktop 的本地 stdio 版本的 MCP 服务器，请使用免费的开源版本：`uvx browser-use --mcp`
+
+## 快速设置
+
+### 第一步：获取 API Key
+
+从 [Browser Use 仪表板](https://cloud.browser-use.com) 获取你的 API Key。
+
+### 第二步：连接你的 AI
+
+<Tabs>
+<Tab title="Claude Code">
+```bash
+claude mcp add --transport http browser-use https://api.browser-use.com/mcp
+```
+</Tab>
+
+<Tab title="Claude Desktop">
+添加到你的 Claude Desktop 配置文件：
+
+**macOS：** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+**Windows：** `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "browser-use": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://api.browser-use.com/mcp",
+        "--header",
+        "X-Browser-Use-API-Key: your-api-key"
+      ]
+    }
+  }
+}
+```
+
+保存后重启 Claude Desktop。
+</Tab>
+
+<Tab title="Cursor">
+添加到 `~/.cursor/mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "browser-use": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://api.browser-use.com/mcp",
+        "--header",
+        "X-Browser-Use-API-Key: your-api-key"
+      ]
+    }
+  }
+}
+```
+</Tab>
+
+<Tab title="Windsurf">
+添加到 `~/.codeium/windsurf/mcp_config.json`：
+
+```json
+{
+  "mcpServers": {
+    "browser-use": {
+      "serverUrl": "https://api.browser-use.com/mcp",
+      "headers": {
+        "X-Browser-Use-API-Key": "your-api-key"
+      }
+    }
+  }
+}
+```
+</Tab>
+
+<Tab title="ChatGPT">
+**第一步：注册 OAuth 客户端**
+
+使用 ChatGPT 的重定向 URI 调用动态客户端注册端点：
+
+```bash
+curl -X POST https://api.browser-use.com/oauth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_name": "ChatGPT Integration",
+    "redirect_uris": ["https://chatgpt.com/connector_platform_oauth_redirect"]
+  }'
+```
+
+保存响应中的 `client_id`（43 个字符的随机字符串）。
+
+**第二步：配置 ChatGPT**
+
+在 ChatGPT 中添加自定义 MCP 连接器：
+- **MCP 服务器 URL**：`https://api.browser-use.com/mcp/chatgpt`
+- **Client ID**：粘贴第一步中的 `client_id`
+
+**第三步：授权**
+
+ChatGPT 将重定向到 Browser Use 的授权页面。登录并授予权限。
+
+**注意：** ChatGPT 使用 OAuth 2.1 认证而非 API Key。你只需要注册一次客户端。
+</Tab>
+</Tabs>
+
+## 可用工具
+
+MCP 服务器提供三个工具：
+
+### `browser_task`
+
+创建并运行浏览器自动化任务。
+- **task**（必需）：你希望浏览器执行的操作
+- **max_steps**（可选）：最大操作数（1-10，默认：8）
+- **profile_id**（可选）：用于持久认证的云端配置 UUID
+
+### `list_browser_profiles`
+
+列出经过身份验证的项目所有可用的云端浏览器配置。配置存储持久登录会话（Cookie、会话）的网站认证状态。
+
+### `monitor_task`
+
+检查浏览器自动化任务的当前状态和进度。立即返回任务状态的快照。
+- **task_id**（必需）：要监控的任务 UUID（由 browser_task 返回）
+
+## 使用示例
+
+连接后，让你的 AI 执行网页任务：
+
+> "在 Google 上搜索最新的 iPhone 评论并总结前 3 个结果"
+
+> "访问 Hacker News，获取前 5 个帖子的标题"
+
+> "用我的信息填写 example.com 上的联系表单"
+
+AI 将自动使用浏览器工具完成这些任务。
+
+## 智能功能
+
+### 云端配置认证
+
+使用云端浏览器配置维护跨任务的持久登录会话。配置存储以下网站的 Cookie 和认证状态：
+- 社交媒体（X/Twitter、LinkedIn、Facebook）
+- 邮箱（Gmail、Outlook）
+- 网银和购物网站
+- 任何需要登录的网站
+
+使用 `list_browser_profiles` 列出可用配置，然后将 `profile_id` 传递给 `browser_task`。
+
+### 实时任务监控
+
+使用 `monitor_task` 检查运行中的任务进度。该工具立即返回当前状态、最新步骤详情和代理推理。重复调用以实时跟踪进度。
+
+### 对话式进度摘要
+
+监控任务时，AI 会自动将步骤数据解释为自然语言更新，说明浏览器已完成的工作和当前正在处理的内容。
+
+## 故障排除
+
+**连接问题？**
+- 验证你的 API Key 是否正确
+- 检查使用的是否是正确的请求头
+
+**任务耗时太长？**
+- 检查 live_url 查看进度
+- 复杂任务增加 max_steps（最大：10）
+- 使用更清晰、更具体的指令
+
+**需要帮助？**
+查看我们的[云端文档](https://docs.cloud.browser-use.com)获取详细说明。
+
+---
+
+## 本地自托管替代方案
+
+对于想要免费、自托管选项的用户，browser-use 可以作为本地 MCP 服务器在你的机器上运行。这需要你自己的 OpenAI 或 Anthropic API Key，但能直接、低级别地控制浏览器自动化。
+
+### 快速开始
+
+本地 MCP 服务器作为 stdio 进程在你的机器上运行。这是**免费、开源的选项**，但需要你自己的 LLM API Key。
+
+#### 手动启动 MCP 服务器
+
+```bash
+uvx --from 'browser-use[cli]' browser-use --mcp
+```
+
+服务器将以 stdio 模式启动，准备接受 MCP 连接。
+
+#### Claude Desktop 集成
+
+最常见的用例是与 Claude Desktop 集成。将此配置添加到你的 Claude Desktop 配置文件：
+
+**macOS：** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "browser-use": {
+      "command": "/Users/your-username/.local/bin/uvx",
+      "args": ["--from", "browser-use[cli]", "browser-use", "--mcp"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-api-key-here"
+      }
+    }
+  }
+}
+```
+
+**Windows：** `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "browser-use": {
+      "command": "uvx",
+      "args": ["--from", "browser-use[cli]", "browser-use", "--mcp"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-api-key-here"
+      }
+    }
+  }
+}
+```
+
+<Note>
+**macOS/Linux PATH 问题：** Claude Desktop 可能无法在 PATH 中找到 `uvx`。请使用完整路径替代：
+- 在终端运行 `which uvx` 查找位置（通常为 `/Users/username/.local/bin/uvx` 或 `~/.local/bin/uvx`）
+- 在配置中替换为完整路径，例如 `"command": "/Users/your-username/.local/bin/uvx"`
+- 将 `your-username` 替换为你的实际用户名
+
+**需要 CLI 扩展：** `--from browser-use[cli]` 标志安装 MCP 服务器支持所需的 CLI 扩展。
+</Note>
+
+#### 环境变量
+
+你可以通过环境变量配置 browser-use：
+
+- `OPENAI_API_KEY` - 你的 OpenAI API Key（必需）
+- `ANTHROPIC_API_KEY` - 你的 Anthropic API Key（OpenAI 的替代方案）
+- `BROWSER_USE_HEADLESS` - 设置为 `false` 显示浏览器窗口
+- `BROWSER_USE_DISABLE_SECURITY` - 设置为 `true` 禁用浏览器安全功能
+
+### 可用工具
+
+本地 MCP 服务器暴露了以下底层浏览器自动化工具以供直接控制：
+
+#### 自主代理工具
+
+- **`retry_with_browser_use_agent`** - 使用 AI 代理运行完整的浏览器自动化任务（直接控制失败时的最后手段）
+
+#### 直接浏览器控制
+
+- **`browser_navigate`** - 导航到 URL
+- **`browser_click`** - 按索引点击元素
+- **`browser_type`** - 向元素输入文本
+- **`browser_get_state`** - 获取当前页面状态和交互元素
+- **`browser_scroll`** - 滚动页面
+- **`browser_go_back`** - 返回浏览器历史
+
+#### 标签页管理
+
+- **`browser_list_tabs`** - 列出所有打开的浏览器标签页
+- **`browser_switch_tab`** - 切换到特定标签页
+- **`browser_close_tab`** - 关闭标签页
+
+#### 内容提取
+
+- **`browser_extract_content`** - 从当前页面提取结构化内容
+
+#### 会话管理
+
+- **`browser_list_sessions`** - 列出所有活动的浏览器会话及详情
+- **`browser_close_session`** - 按 ID 关闭特定浏览器会话
+- **`browser_close_all`** - 关闭所有活动的浏览器会话
+
+### 使用示例
+
+配置好 Claude Desktop 后，你可以让 Claude 执行浏览器自动化任务：
+
+```
+"请导航到 example.com 并截图"
+
+"在 Google 上搜索'浏览器自动化'并总结前 3 个结果"
+
+"访问 GitHub，找到 browser-use 仓库，告诉我最新版本信息"
+```
+
+Claude 将通过 browser-use 执行这些任务。
+
+### 程序化使用
+
+你也可以程序化地连接到 MCP 服务器：
+
+```python
+import asyncio
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async def use_browser_mcp():
+    # 连接到 browser-use MCP 服务器
+    server_params = StdioServerParameters(
+        command="uvx",
+        args=["--from", "browser-use[cli]", "browser-use", "--mcp"]
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # 导航到网站
+            result = await session.call_tool(
+                "browser_navigate",
+                arguments={"url": "https://example.com"}
+            )
+            print(result.content[0].text)
+
+            # 获取页面状态
+            result = await session.call_tool(
+                "browser_get_state",
+                arguments={"include_screenshot": True}
+            )
+            print("页面状态已获取！")
+
+asyncio.run(use_browser_mcp())
+```
+
+### 故障排除
+
+#### 常见问题
+
+**"CLI 扩展未安装"错误**
+确保在 uvx 命令中使用 `--from 'browser-use[cli]'`：
+```bash
+uvx --from 'browser-use[cli]' browser-use --mcp
+```
+
+**"spawn uvx ENOENT" 错误（macOS/Linux）**
+Claude Desktop 在其 PATH 中找不到 `uvx`。在配置中使用完整路径：
+- 在终端运行 `which uvx` 查找位置
+- 更新配置使用完整路径（例如 `/Users/your-username/.local/bin/uvx`）
+
+**浏览器不启动**
+- 确保已安装 Chrome/Chromium
+- 尝试设置 `BROWSER_USE_HEADLESS=false` 查看浏览器窗口
+- 确保没有其他浏览器实例使用相同配置
+
+**API Key 问题**
+- 验证 `OPENAI_API_KEY` 设置正确
+- 检查 API Key 权限和账单状态
+- 尝试使用 `ANTHROPIC_API_KEY` 作为替代方案
+
+**Claude Desktop 连接问题**
+- 配置更改后重启 Claude Desktop
+- 检查配置文件语法是有效的 JSON
+- 验证文件路径对操作系统正确
+- 检查日志位置：`~/Library/Logs/Claude/`（macOS）或 `%APPDATA%\Claude\Logs\`（Windows）
+
+#### 调试模式
+
+通过设置启用调试日志：
+```bash
+export BROWSER_USE_LOGGING_LEVEL=DEBUG
+uvx --from 'browser-use[cli]' browser-use --mcp
+```
+
+### 安全考虑
+
+- MCP 服务器可以访问你的浏览器和文件系统
+- 仅连接可信的 MCP 客户端
+- 对敏感网站和数据谨慎操作
+- 对于不信任的自动化考虑在沙箱环境中运行
+
+### 下一步
+
+- 探索[示例目录](https://github.com/browser-use/browser-use/tree/main/examples/mcp)获取更多使用模式
+- 查看 [MCP 文档](https://modelcontextprotocol.io/) 了解更多关于协议的信息
+- 加入我们的 [Discord](https://link.browser-use.com/discord) 获取支持和讨论
+
+## 相关资源
+
+- [MCP 文档](/customize/integrations/docs-mcp)
+- [代码代理基础](/customize/code-agent/basics)
+- [沙箱快速开始](/customize/sandbox/quickstart)

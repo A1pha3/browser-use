@@ -1,0 +1,166 @@
+---
+title: "导出会话"
+description: "将 CodeAgent 会话保存并分享为 Jupyter notebook 或 Python 脚本。"
+icon: "download"
+---
+
+## 概述
+
+CodeAgent 会自动保存会话期间执行的所有代码和 JavaScript 代码块。你可以用多种格式导出完整的自动化工作流以供分享、版本控制或重新运行。
+
+## 快速开始
+
+```python
+import asyncio
+from browser_use import CodeAgent, ChatBrowserUse
+from browser_use.code_use.notebook_export import export_to_ipynb, session_to_python_script
+
+async def main():
+    agent = CodeAgent(
+        task="从 https://example.com 提取产品数据",
+        llm=ChatBrowserUse(),
+        max_steps=10
+    )
+    
+    # 运行你的自动化
+    await agent.run()
+    
+    # 导出为 Jupyter notebook
+    notebook_path = export_to_ipynb(agent, "product_scraping.ipynb")
+    
+    # 导出为 Python 脚本
+    python_script = session_to_python_script(agent)
+    with open("product_scraping.py", "w") as f:
+        f.write(python_script)
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+## 导出格式
+
+### Jupyter Notebook (.ipynb)
+
+**包含内容：**
+- 包含浏览器初始化和导入的设置单元格
+- 作为 Python 字符串变量的 JavaScript 代码块
+- 所有已执行的 Python 单元格（含输出和错误）
+- 浏览器状态快照
+
+**结构：**
+```python
+# 单元格 1：设置
+import asyncio
+import json
+from browser_use import BrowserSession
+from browser_use.code_use import create_namespace
+
+browser = BrowserSession()
+await browser.start()
+namespace = create_namespace(browser)
+globals().update(namespace)
+
+# 单元格 2：JavaScript 变量
+extract_products = """(function(){
+    return Array.from(document.querySelectorAll('.product')).map(product => ({
+        name: product.querySelector('.name')?.textContent,
+        price: product.querySelector('.price')?.textContent
+    }));
+})()"""
+
+# 其余单元格：Python 执行
+await navigate('https://example.com')
+
+...
+
+products = await evaluate(extract_products)
+print(f"找到 {len(products)} 个产品")
+```
+
+### Python 脚本 (.py)
+
+**最佳用途：** 生产部署、版本控制、自动化
+
+**包含内容：**
+- 包含所有导入的完整可运行脚本
+- 作为 Python 字符串变量的 JavaScript 代码块
+- 所有带有正确缩进的执行代码
+- 可直接用 `python script.py` 运行
+
+**结构：**
+```python
+# 来自 browser-use code-use 会话的生成代码
+import asyncio
+import json
+from browser_use import BrowserSession
+from browser_use.code_use import create_namespace
+
+async def main():
+    # 初始化浏览器和命名空间
+    browser = BrowserSession()
+    await browser.start()
+    
+    # 创建包含所有浏览器控制函数的命名空间
+    namespace = create_namespace(browser)
+    
+    # 从命名空间提取函数以直接访问
+    navigate = namespace["navigate"]
+    click = namespace["click"]
+    evaluate = namespace["evaluate"]
+    # ... 其他函数
+    
+    # JavaScript 代码块：extract_products
+    extract_products = """(function(){
+        return Array.from(document.querySelectorAll('.product')).map(product => ({
+            name: product.querySelector('.name')?.textContent,
+            price: product.querySelector('.price')?.textContent
+        }));
+    })()"""
+    
+    # 单元格 1
+    await navigate('https://example.com')
+    
+    # 单元格 2
+    products = await evaluate(extract_products)
+    print(f"找到 {len(products)} 个产品")
+    
+    await browser.stop()
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+## 使用场景
+
+### 版本控制
+
+将导出的 Python 脚本提交到 Git 仓库：
+
+```bash
+git add product_scraping.py
+git commit -m "feat: 添加产品抓取自动化"
+git push
+```
+
+### 分享和协作
+
+导出为 Jupyter notebook 分享给团队成员：
+
+```python
+notebook_path = export_to_ipynb(agent, "shared_automation.ipynb")
+# 分享 .ipynb 文件
+```
+
+### 生产部署
+
+使用导出的 Python 脚本进行生产部署：
+
+```bash
+python product_scraping.py
+```
+
+## 相关资源
+
+- [代码代理基础](./basics.mdx)
+- [代码代理所有参数](./all-parameters.mdx)
+- [代码代理输出格式](./output-format.mdx)

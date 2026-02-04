@@ -1,0 +1,133 @@
+---
+title: "输出格式"
+description: "了解代理历史记录的结构和访问方法。"
+icon: "arrow-right-to-bracket"
+mode: "wide"
+---
+
+## 代理历史记录
+
+`run()` 方法返回包含完整执行历史的 `AgentHistoryList` 对象：
+
+```python
+history = await agent.run()
+
+# 访问有用的信息
+history.urls()                   # 访问过的 URL 列表
+history.screenshot_paths()      # 截图路径列表
+history.screenshots()           # 截图列表（base64 字符串）
+history.action_names()          # 已执行操作的名称
+history.extracted_content()     # 所有操作中提取的内容列表
+history.errors()                # 错误列表（没有错误的步骤为 None）
+history.model_actions()         # 所有操作及其参数
+history.model_outputs()         # 历史记录中的所有模型输出
+history.last_action()          # 历史记录中的最后一个操作
+
+# 分析方法
+history.final_result()         # 获取最终提取的内容（最后一步）
+history.is_done()              # 检查代理是否成功完成
+history.is_successful()        # 检查代理是否成功完成（未完成则返回 None）
+history.has_errors()           # 检查是否发生任何错误
+history.model_thoughts()       # 获取代理的推理过程（AgentBrain 对象）
+history.action_results()       # 从历史记录中获取所有 ActionResult 对象
+history.action_history()      # 获取带有基本字段的截断操作历史
+history.number_of_steps()      # 获取历史记录中的步骤数
+history.total_duration_seconds()  # 获取所有步骤的总时长（秒）
+
+# 结构化输出（使用 output_model_schema 时）
+history.structured_output      # 返回解析后的结构化输出
+```
+
+请参阅 [AgentHistoryList 源代码](https://github.com/browser-use/browser-use/blob/main/browser_use/agent/views.py#L301) 中的所有辅助方法。
+
+## 结构化输出
+
+对于结构化输出，使用带有 Pydantic 模型的 `output_model_schema` 参数。
+
+### 定义输出模型
+
+```python
+from pydantic import BaseModel
+from typing import List, Optional
+
+class SearchResult(BaseModel):
+    title: str
+    url: str
+    snippet: str
+
+class SearchSummary(BaseModel):
+    query: str
+    total_results: int
+    results: List[SearchResult]
+```
+
+### 使用结构化输出
+
+```python
+from browser_use import Agent, ChatBrowserUse
+
+agent = Agent(
+    task="搜索 AI 新闻并返回前 5 个结果",
+    llm=ChatBrowserUse(),
+    output_model_schema=SearchSummary,
+)
+
+history = await agent.run()
+
+# 获取结构化输出
+summary = history.structured_output
+print(f"查询: {summary.query}")
+print(f"结果数: {summary.total_results}")
+for result in summary.results:
+    print(f"- {result.title}: {result.url}")
+```
+
+## 访问执行历史
+
+### 获取所有步骤信息
+
+```python
+# 获取所有模型输出
+for output in history.model_outputs():
+    print(f"思考: {output.thinking}")
+    print(f"动作: {output.actions}")
+
+# 获取所有操作结果
+for result in history.action_results():
+    if result.error:
+        print(f"错误: {result.error}")
+    else:
+        print(f"结果: {result.extracted_content}")
+```
+
+### 过滤和分析
+
+```python
+# 获取所有错误
+errors = [e for e in history.errors() if e is not None]
+if errors:
+    print(f"发生 {len(errors)} 个错误")
+
+# 获取成功步骤
+successful_steps = [r for r in history.action_results() if r.success]
+
+# 获取特定类型的操作
+clicks = [a for a in history.model_actions() if a.name == 'click']
+print(f"点击次数: {len(clicks)}")
+```
+
+## 使用令牌和成本
+
+```python
+# 如果启用了成本计算
+if hasattr(history, 'usage'):
+    print(f"输入令牌: {history.usage.prompt_tokens}")
+    print(f"输出令牌: {history.usage.completion_tokens}")
+    print(f"总令牌: {history.usage.total_tokens}")
+```
+
+## 相关资源
+
+- [代理基础](./basics.mdx)
+- [所有参数](./all-parameters.mdx)
+- [提示词指南](./prompting-guide.mdx)

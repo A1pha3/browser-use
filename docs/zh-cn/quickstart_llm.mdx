@@ -1,0 +1,408 @@
+---
+title: "LLM 快速开始"
+description: "使用 AI 编码助手快速上手 Browser Use。"
+icon: "brain"
+---
+
+## 概述
+
+如果你使用 AI 编码助手（如 Cursor、Claude Code 等）来帮助你开发，只需让它们阅读 Browser Use 的完整上下文，它们就能自动为你编写浏览器自动化代码。
+
+## 快速步骤
+
+1. 复制以下所有内容（点击复制按钮）
+2. 粘贴到你的项目文件或 AI 助手的上下文中
+3. 输入提示词：「帮我用 Browser Use 实现 xxx 功能」
+
+## Browser Use 完整上下文
+
+以下内容包含 Browser Use 的所有核心概念、API 和最佳实践：
+
+### 项目简介
+
+**Browser Use** 是一个开源 Python 库，允许大语言模型（LLM）通过 Chrome DevTools Protocol（CDP）控制浏览器，自动执行网页操作任务。
+
+### 核心组件
+
+#### 1. Agent（代理）
+
+`Agent` 是 Browser Use 的核心组件，负责接收任务、规划操作步骤并执行浏览器操作。
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+
+agent = Agent(
+    task="你的任务描述",
+    llm=ChatBrowserUse(),
+    browser=Browser(headless=False),
+    # 可选参数
+    max_steps=100,           # 最大执行步数
+    max_actions_per_step=3,  # 每步最大操作数
+    use_vision=True,        # 使用视觉分析
+    max_failures=3,         # 最大失败重试次数
+)
+```
+
+#### 2. Browser（浏览器）
+
+`Browser` 类用于配置和管理浏览器实例。
+
+```python
+from browser_use import Browser
+
+browser = Browser(
+    headless=False,              # 是否无头模式
+    window_size={'width': 1280, 'height': 720},  # 窗口大小
+    user_data_dir='~/.config/browser-use',  # 用户数据目录
+    profile_directory='Default',  # 浏览器配置目录
+    proxy=None,                  # 代理设置
+    cdp_url=None,                # 远程 CDP URL
+    executable_path=None,        # 浏览器可执行文件路径
+    keep_alive=True,             # 保持浏览器运行
+    downloads_path='./downloads',  # 下载目录
+    allowed_domains=None,        # 允许访问的域名列表
+    prohibited_domains=None,    # 禁止访问的域名列表
+)
+```
+
+#### 3. LLM（语言模型）
+
+Browser Use 支持多种 LLM 提供商：
+
+```python
+# ChatBrowserUse（推荐）
+from browser_use import ChatBrowserUse
+llm = ChatBrowserUse()
+
+# OpenAI
+from browser_use import ChatOpenAI
+llm = ChatOpenAI(model="gpt-4o")
+
+# Anthropic
+from browser_use import ChatAnthropic
+llm = ChatAnthropic(model="claude-sonnet-4-0")
+
+# Google
+from browser_use import ChatGoogle
+llm = ChatGoogle(model="gemini-flash-latest")
+
+# AWS Bedrock
+from browser_use import ChatAWSBedrock
+llm = ChatAWSBedrock(model="anthropic.claude-3-5-sonnet-20240620-v1:0")
+
+# Ollama（本地）
+from browser_use import ChatOllama
+llm = ChatOllama(model="llama3.1:8b")
+```
+
+### 可用工具（Actions）
+
+#### 导航操作
+
+```python
+# 导航到 URL
+agent = Agent(task="go to https://example.com")
+
+# 返回上一页
+agent = Agent(task="go back")
+
+# 等待指定秒数
+agent = Agent(task="wait for 3 seconds")
+```
+
+#### 页面交互
+
+```python
+# 点击元素
+agent = Agent(task="click the submit button")
+
+# 输入文本
+agent = Agent(task="type 'hello@example.com' into the email field")
+
+# 上传文件
+agent = Agent(task="upload resume.pdf to the file input")
+
+# 滚动页面
+agent = Agent(task="scroll down 500 pixels")
+
+# 查找并滚动到指定文本
+agent = Agent(task="find and scroll to 'Contact Us'")
+
+# 发送快捷键
+agent = Agent(task="press Tab and Enter")
+```
+
+#### JavaScript 执行
+
+```python
+# 执行自定义 JavaScript
+agent = Agent(task="execute JavaScript to click a hidden element")
+```
+
+#### 标签页管理
+
+```python
+# 切换标签页
+agent = Agent(task="switch to the second tab")
+
+# 关闭标签页
+agent = Agent(task="close the current tab")
+```
+
+#### 内容提取
+
+```python
+# 使用 LLM 提取页面内容
+agent = Agent(task="extract all product names and prices")
+```
+
+#### 截图
+
+```python
+# 请求截图
+agent = Agent(task="take a screenshot of the page")
+```
+
+#### 表单操作
+
+```python
+# 获取下拉选项
+agent = Agent(task="get all country options")
+
+# 选择下拉选项
+agent = Agent(task="select 'China' from the country dropdown")
+```
+
+#### 文件操作
+
+```python
+# 写入文件
+agent = Agent(task="save the extracted data to results.json")
+
+# 读取文件
+agent = Agent(task="read config.json")
+
+# 替换文件内容
+agent = Agent(task="replace 'old' with 'new' in file.txt")
+```
+
+#### 任务完成
+
+```python
+# 标记任务完成
+agent = Agent(task="done with the task")
+```
+
+### 高级配置
+
+#### 自定义工具（Tools）
+
+```python
+from browser_use import Tools, Agent, ChatBrowserUse
+
+tools = Tools()
+
+@tools.action(description='Ask human for help')
+async def ask_human(question: str) -> str:
+    answer = input(f'{question} > ')
+    return f'人类的回答：{answer}'
+
+@tools.action(description='Send email')
+async def send_email(to: str, subject: str, body: str) -> str:
+    # 邮件发送逻辑
+    return f'邮件已发送至 {to}'
+
+agent = Agent(
+    task="填写表单后发送确认邮件",
+    llm=ChatBrowserUse(),
+    tools=tools,
+)
+```
+
+#### 系统提示词扩展
+
+```python
+agent = Agent(
+    task="你的任务",
+    llm=ChatBrowserUse(),
+    extend_system_message="""
+    你是一个专业的浏览器自动化助手。
+    请遵循以下规则：
+    1. 优先点击可见且可点击的元素
+    2. 遇到错误时尝试备用方案
+    3. 页面加载完成后再进行操作
+    """,
+)
+```
+
+#### 初始操作
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+from browser_use.controller.service import Controller
+
+controller = Controller()
+
+@controller.action('打开浏览器')
+async def open_browser(url: str):
+    # 自定义逻辑
+    pass
+
+agent = Agent(
+    task="你的任务",
+    llm=ChatBrowserUse(),
+    initial_actions=[
+        {'open_browser': {'url': 'https://example.com'}}
+    ],
+)
+```
+
+### 运行时参数
+
+```python
+history = await agent.run(
+    max_steps=100,      # 最大步数限制
+)
+
+# 访问结果
+print(history.urls())                    # 所有访问过的 URL
+print(history.screenshot_paths())         # 所有截图路径
+print(history.extracted_content())       # 提取的内容列表
+print(history.action_names())             # 执行的操作名称列表
+print(history.errors())                   # 错误列表
+print(history.final_result())            # 最终结果
+print(history.is_done())                 # 是否完成
+print(history.is_successful())           # 是否成功
+```
+
+### 最佳实践
+
+#### 1. 任务描述要具体
+
+```python
+# 推荐 - 具体明确
+task = """
+1. 访问 https://quotes.toscrape.com/
+2. 提取前 10 条名人名言和作者
+3. 保存为 CSV 文件
+"""
+
+# 不推荐 - 过于笼统
+task = "获取一些名言"
+```
+
+#### 2. 直接引用操作名称
+
+```python
+# 推荐
+task = """
+1. 使用 search 搜索 "Python 教程"
+2. 使用 click 打开第一个结果（在新标签页）
+3. 使用 scroll 向下滚动 2 页
+4. 使用 extract 提取前 5 个章节名称
+"""
+
+# 不推荐
+task = "搜索 Python 教程并浏览"
+```
+
+#### 3. 使用键盘导航处理交互问题
+
+```python
+task = """
+如果提交按钮无法点击：
+1. 使用 send_keys 执行 "Tab Tab Enter"
+2. 或者使用 send_keys 执行 "ArrowDown ArrowDown Enter"
+"""
+```
+
+#### 4. 添加错误恢复策略
+
+```python
+task = """
+数据提取任务：
+1. 访问 openai.com 查找 CEO 信息
+2. 如果导航失败（反爬虫保护）：
+   - 使用 google search 查找 CEO
+3. 如果页面超时：
+   - 使用 go_back 返回并尝试其他方法
+"""
+```
+
+### 常用代码片段
+
+#### 完整示例
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+import asyncio
+
+async def main():
+    browser = Browser(headless=False)
+    llm = ChatBrowserUse()
+
+    agent = Agent(
+        task="""自动化任务示例：
+        1. 访问 https://example.com
+        2. 提取页面标题
+        3. 截图保存
+        4. 完成任务""",
+        llm=llm,
+        browser=browser,
+    )
+
+    history = await agent.run()
+    print(f"完成状态: {history.is_done()}")
+    print(f"最终结果: {history.final_result()}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+#### 自定义浏览器配置
+
+```python
+browser = Browser(
+    headless=False,
+    window_size={'width': 1920, 'height': 1080},
+    user_data_dir='~/.config/browser-use',
+    profile_directory='Default',
+    proxy=None,
+    downloads_path='./downloads',
+    record_video_dir='./videos',
+    traces_dir='./traces',
+)
+```
+
+#### 沙箱部署（生产环境）
+
+```python
+from browser_use import Browser, sandbox, ChatBrowserUse
+from browser_use.agent.service import Agent
+import asyncio
+
+@sandbox()
+async def production_task(browser: Browser):
+    agent = Agent(
+        task="你的任务",
+        browser=browser,
+        llm=ChatBrowserUse(),
+    )
+    await agent.run()
+
+asyncio.run(production_task())
+```
+
+### 常见问题速查
+
+| 问题 | 解决方案 |
+|-----|---------|
+| 代理点击失败 | 使用键盘导航（Tab/Enter） |
+| 页面加载超时 | 增加 `minimum_wait_page_load_time` |
+| 验证码问题 | 使用 Browser Use Cloud |
+| 需要登录 | 使用真实浏览器配置 |
+| 下载文件 | 设置 `accept_downloads=True` 和 `downloads_path` |
+
+---
+
+现在你可以告诉 AI 助手：「帮我用 Browser Use 实现 xxx 功能」，它会基于以上上下文为你生成完整的代码。

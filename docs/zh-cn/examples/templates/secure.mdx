@@ -1,0 +1,131 @@
+---
+title: "安全配置"
+description: "使用 Azure OpenAI 实现数据隐私和安全配置。"
+icon: "shield-check"
+mode: "wide"
+---
+
+## 概述
+
+Browser Use 支持企业级安全配置，包括 Azure OpenAI、数据隐私保护和受限制的浏览器访问。
+
+## 安全设置示例
+
+```python
+import asyncio
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+from browser_use import Agent, BrowserProfile, ChatAzureOpenAI
+
+# 禁用遥测以保护隐私
+os.environ['ANONYMIZED_TELEMETRY'] = 'false'
+
+# Azure OpenAI 配置
+api_key = os.getenv('AZURE_OPENAI_KEY')
+azure_endpoint = os.getenv('AZURE_OPENAI_ENDPOINT')
+llm = ChatAzureOpenAI(
+    model='gpt-4.1-mini',
+    api_key=api_key,
+    azure_endpoint=azure_endpoint
+)
+
+# 安全浏览器配置
+browser_profile = BrowserProfile(
+    allowed_domains=['*google.com', 'browser-use.com'],
+    enable_default_extensions=False
+)
+
+# 敏感数据过滤
+sensitive_data = {'company_name': 'browser-use'}
+
+# 创建安全代理
+agent = Agent(
+    task='查找敏感公司名称的创始人',
+    llm=llm,
+    browser_profile=browser_profile,
+    sensitive_data=sensitive_data
+)
+
+async def main():
+    await agent.run(max_steps=10)
+
+asyncio.run(main())
+```
+
+## 安全特性
+
+### Azure OpenAI 安全
+
+| 特性 | 说明 |
+|-----|------|
+| **模型训练** | 不用于训练 OpenAI 模型 |
+| **数据共享** | 不与其他客户共享 |
+| **托管** | 完全托管在 Azure 内部 |
+| **数据保留** | 默认 30 天保留（或通过有限访问计划为零） |
+
+### 浏览器安全
+
+| 配置 | 说明 |
+|-----|------|
+| `allowed_domains` | 限制导航到可信网站 |
+| `enable_default_extensions=False` | 禁用可能有危险的扩展 |
+| `sensitive_data` | 从 LLM 输入中过滤敏感信息 |
+
+## 高级安全配置
+
+### 1. 域名白名单
+
+```python
+browser_profile = BrowserProfile(
+    allowed_domains=[
+        '*.trusted-company.com',
+        'https://internal-tool.company.com',
+        'browser-use.com',
+    ]
+)
+```
+
+### 2. 禁用扩展
+
+```python
+browser_profile = BrowserProfile(
+    enable_default_extensions=False,  # 禁用所有默认扩展
+    args=['--disable-extensions'],  # 额外禁用扩展的启动参数
+)
+```
+
+### 3. 敏感数据处理
+
+```python
+sensitive_data = {
+    'api_key': '***',  # API Key 被屏蔽
+    'database_password': '***',  # 数据库密码被屏蔽
+    'internal_domain': 'internal.company.com',  # 内部域名被屏蔽
+}
+
+agent = Agent(
+    task='搜索公开信息',
+    llm=llm,
+    sensitive_data=sensitive_data,
+)
+```
+
+## 企业部署
+
+<Note>
+有关企业部署，请联系 support@browser-use.com。
+</Note>
+
+我们提供：
+- 优先技术支持
+- 定制安全解决方案
+- 专业咨询服务
+- SLA 保证
+
+## 相关资源
+
+- [Azure OpenAI 文档](https://learn.microsoft.com/azure/cognitive-services/openai/)
+- [敏感数据处理](/customize/agent/basics.mdx)
+- [浏览器安全配置](/customize/browser/basics.mdx)

@@ -1,0 +1,112 @@
+---
+title: "成本跟踪"
+description: "跟踪令牌使用情况和 API 成本。"
+icon: "dollar-sign"
+mode: "wide"
+---
+
+## 概述
+
+Browser Use 提供了内置的成本跟踪功能，可以监控令牌使用情况和 API 成本。
+
+## 启用成本计算
+
+要跟踪令牌使用情况和成本，请启用成本计算：
+
+```python
+from browser_use import Agent, ChatBrowserUse
+
+agent = Agent(
+    task="搜索最新的 AI 新闻",
+    llm=ChatBrowserUse(),
+    calculate_cost=True  # 启用成本跟踪
+)
+
+history = await agent.run()
+
+# 从历史记录中获取使用情况
+print(f"令牌使用情况: {history.usage}")
+```
+
+## 获取使用摘要
+
+```python
+from browser_use import Agent, ChatBrowserUse
+
+agent = Agent(
+    task="你的任务",
+    llm=ChatBrowserUse(),
+    calculate_cost=True,
+)
+
+history = await agent.run()
+
+# 从使用摘要中获取
+usage_summary = await agent.token_cost_service.get_usage_summary()
+print(f"使用摘要: {usage_summary}")
+```
+
+## 使用摘要内容
+
+使用摘要包含以下信息：
+
+| 字段 | 说明 |
+|-----|------|
+| `prompt_tokens` | 输入令牌数量 |
+| `completion_tokens` | 输出令牌数量 |
+| `total_tokens` | 总令牌数量 |
+| `cost` | 本次运行的预估成本 |
+
+## 多步任务成本
+
+对于多步任务，你可以跟踪每步的成本：
+
+```python
+agent = Agent(
+    task="复杂的多步任务",
+    llm=ChatBrowserUse(),
+    calculate_cost=True,
+)
+
+history = await agent.run()
+
+# 获取每步的成本
+for i, step in enumerate(history.model_outputs()):
+    if hasattr(step, 'usage'):
+        print(f"步骤 {i+1}: {step.usage.total_tokens} 令牌")
+```
+
+## 成本优化建议
+
+### 1. 减少令牌使用
+
+- 使用更短、更具体的任务描述
+- 减少 `max_steps` 以限制执行步数
+- 使用 `max_history_items` 限制历史记录大小
+
+### 2. 选择成本效益高的模型
+
+| 模型 | 成本 | 速度 |
+|-----|------|------|
+| ChatBrowserUse | 中等 | 快 |
+| Google Gemini Flash | 低 | 很快 |
+| GPT-4o-mini | 中等 | 快 |
+
+### 3. 批量操作
+
+使用 `max_actions_per_step` 参数批量执行操作：
+
+```python
+agent = Agent(
+    task="填写表单",
+    llm=ChatBrowserUse(),
+    max_actions_per_step=4,  # 每步最多 4 个操作
+    calculate_cost=True,
+)
+```
+
+## 相关资源
+
+- [遥测数据](/development/monitoring/telemetry.mdx)
+- [可观测性](/development/monitoring/observability.mdx)
+- [OpenLIT 集成](/development/monitoring/openlit.mdx)

@@ -1,0 +1,142 @@
+---
+title: "OpenLIT 集成"
+description: "使用 OpenLIT 追踪实现 Browser Use 的完整可观测性。"
+icon: "chart-line"
+mode: "wide"
+---
+
+## 概述
+
+Browser Use 与 [OpenLIT](https://github.com/openlit/openlit) 原生集成 - 这是一个开源的 OpenTelemetry 原生平台，为你的 browser-use 代理执行的每个任务提供完整、详细的追踪，从高级别代理调用到单个浏览器操作。
+
+在 [OpenLIT 文档](https://docs.openlit.io) 中阅读更多关于 OpenLIT 的信息。
+
+## 设置
+
+安装 OpenLIT 和 Browser Use：
+
+```bash
+uv pip install openlit browser-use
+```
+
+## 使用
+
+OpenLIT 提供**零代码更改**的自动、全面的检测，只需初始化即可：
+
+```python {5-6}
+from browser_use import Agent, Browser, ChatOpenAI
+import asyncio
+import openlit
+
+# 初始化 OpenLIT - 就这么简单！
+openlit.init()
+
+async def main():
+    browser = Browser()
+
+    llm = ChatOpenAI(
+        model="gpt-4o",
+    )
+
+    agent = Agent(
+        task="找到 Hacker News 上的热门帖子",
+        llm=llm,
+        browser=browser,
+    )
+
+    history = await agent.run()
+    return history
+
+if __name__ == "__main__":
+    history = asyncio.run(main())
+```
+
+## 查看追踪
+
+OpenLIT 提供了一个强大的仪表板，你可以：
+
+### 监控执行流程
+
+查看带有每个步骤计时信息的完整执行树。点击任何 `invoke_model` 步骤，查看发送给 LLM 的确切提示词以及带有代理推理的完整响应。
+
+### 跟踪成本和令牌使用情况
+
+- 按代理、任务和模型分类的成本明细
+- 每次 LLM 调用的令牌使用情况，完整输入/输出可见性
+- 比较不同 LLM 提供商的成本
+- 识别昂贵的提示词并进行优化
+
+### 使用代理解推理调试失败
+
+当自动化失败时，你可以：
+- 确切查看哪个步骤失败了
+- 读取失败点的代理思考
+- 检查浏览器状态和可用元素
+- 分析失败是由于错误的推理还是错误的信息
+- 在完整上下文中修复根本原因
+
+### 性能优化
+
+- 识别慢步骤（LLM 调用 vs 浏览器操作 vs HTTP 请求）
+- 跨运行比较执行时间
+- 优化 max_steps 和 max_actions_per_step
+- 跟踪页面导航的 HTTP 请求延迟
+
+## 配置
+
+### 自定义 OpenTelemetry 端点配置
+
+```python
+import openlit
+
+# 配置自定义 OTLP 端点
+openlit.init(
+    otlp_endpoint="http://localhost:4318",
+    application_name="my-browser-automation",
+    environment="production"
+)
+```
+
+### 环境变量
+
+你也可以通过环境变量配置 OpenLIT：
+
+```bash
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+export OTEL_SERVICE_NAME="browser-automation"
+export OTEL_ENVIRONMENT="production"
+```
+
+### 自托管 OpenLIT
+
+如果你希望将数据保存在本地：
+
+```bash
+# 使用 Docker
+docker run -d \
+  -p 4318:4318 \
+  -p 3000:3000 \
+  openlit/openlit:latest
+
+# 在 http://localhost:3000 访问仪表板
+```
+
+## 与现有工具集成
+
+OpenLIT 在底层使用 OpenTelemetry，因此它可以与以下工具无缝集成：
+
+- **Jaeger** - 分布式追踪可视化
+- **Prometheus** - 指标收集和告警
+- **Grafana** - 自定义仪表板和分析
+- **Datadog** - APM 和日志管理
+- **New Relic** - 全栈可观测性
+- **Elastic APM** - 应用程序性能监控
+
+只需配置 OpenLIT 导出到你现有的 OTLP 兼容端点即可。
+
+## 相关资源
+
+- [OpenLIT 官网](https://openlit.io)
+- [OpenLIT 文档](https://docs.openlit.io)
+- [Laminar 可观测性](./observability.mdx)
+- [遥测数据](./telemetry.mdx)

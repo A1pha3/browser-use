@@ -1,0 +1,197 @@
+---
+title: "所有参数"
+description: "浏览器配置选项的完整参考。"
+icon: "sliders"
+mode: "wide"
+---
+
+<Note>
+`Browser` 实例还提供所有 [Actor](/customize/actor/all-parameters) 方法，用于直接浏览器控制（页面管理、元素交互等）。
+</Note>
+
+## 核心设置
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `cdp_url` | `str` | 用于连接现有浏览器实例的 CDP URL | `None` |
+
+## 显示和外观
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `headless` | `bool` 或 `None` | 是否无界面运行。自动检测显示可用性 | `None` |
+| `window_size` | `dict` 或 `ViewportSize` | 有界面模式下的浏览器窗口大小 | `{'width': 1280, 'height': 720}` |
+| `window_position` | `dict` | 从左上角开始的窗口位置（像素） | `{'width': 0, 'height': 0}` |
+| `viewport` | `dict` 或 `ViewportSize` | 内容区域大小 | `{'width': 1280, 'height': 720}` |
+| `no_viewport` | `bool` 或 `None` | 禁用视口模拟 | `None` |
+| `device_scale_factor` | `float` | 设备缩放因子（DPI） | `1.0` |
+
+## 浏览器行为
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `keep_alive` | `bool` 或 `None` | 代理完成后保持浏览器运行 | `None` |
+| `allowed_domains` | `list[str]` | 限制导航到特定域名 | `None` |
+| `prohibited_domains` | `list[str]` | 阻止导航到特定域名 | `None` |
+| `enable_default_extensions` | `bool` | 加载自动化扩展 | `True` |
+| `cross_origin_iframes` | `bool` | 启用跨域 iframe 支持 | `False` |
+| `is_local` | `bool` | 是否为本地浏览器实例 | `True` |
+
+### 域名模式格式
+
+**允许的域名示例：**
+```python
+allowed_domains=[
+    'example.com',           # 仅匹配 https://example.com/*
+    '*.example.com',        # 匹配所有子域名
+    'http*://example.com',  # 同时匹配 http:// 和 https://
+    'chrome-extension://*', # 匹配任何扩展程序 URL
+]
+```
+
+<Warning>
+出于安全考虑，TLD 中的通配符（例如 `example.*`）是不允许的。
+</Warning>
+
+## 用户数据和配置
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `user_data_dir` | `str` 或 `Path` | 浏览器配置数据目录 | 自动生成的临时目录 |
+| `profile_directory` | `str` | Chrome 配置子目录名称 | `'Default'` |
+| `storage_state` | `str` 或 `dict` | 浏览器存储状态（Cookie、localStorage） | `None` |
+
+## 网络和安全
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `proxy` | `ProxySettings` | 代理配置 | `None` |
+| `permissions` | `list[str]` | 授予的浏览器权限 | `['clipboardReadWrite', 'notifications']` |
+| `headers` | `dict` | 额外的 HTTP 请求头（仅远程浏览器） | `None` |
+
+## 浏览器启动
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `executable_path` | `str` | 浏览器可执行文件路径 | `None` |
+| `channel` | `str` | 浏览器频道 | `None` |
+| `args` | `list[str]` | 额外的命令行参数 | `[]` |
+| `env` | `dict` | 浏览器进程的环境变量 | `{}` |
+| `chromium_sandbox` | `bool` | 启用 Chromium 沙箱 | `True` |
+| `devtools` | `bool` | 自动打开 DevTools 面板 | `False` |
+| `ignore_default_args` | `list[str]` 或 `bool` | 要禁用的默认参数 | `[]` |
+
+### 平台示例
+
+```python
+# macOS
+browser = Browser(
+    executable_path='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+)
+
+# Windows
+browser = Browser(
+    executable_path='C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+)
+
+# Linux
+browser = Browser(
+    executable_path='/usr/bin/google-chrome'
+)
+```
+
+## 时间和性能
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `minimum_wait_page_load_time` | `float` | 捕获页面状态前等待的最短时间（秒） | `0.25` |
+| `wait_for_network_idle_page_load_time` | `float` | 等待网络活动停止的时间（秒） | `0.5` |
+| `wait_between_actions` | `float` | 代理操作之间等待的时间（秒） | `0.5` |
+
+## AI 集成
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `highlight_elements` | `bool` | 为 AI 视觉高亮可交互元素 | `True` |
+| `paint_order_filtering` | `bool` | 启用 paint order 过滤以优化 DOM 树 | `True` |
+
+## 下载和文件
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `accept_downloads` | `bool` | 自动接受所有下载 | `True` |
+| `downloads_path` | `str` 或 `Path` | 下载文件保存目录 | `None` |
+| `auto_download_pdfs` | `bool` | 自动下载 PDF 而非在浏览器中查看 | `True` |
+
+## 设备模拟
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `user_agent` | `str` | 自定义 User-Agent 字符串 | `None` |
+| `screen` | `dict` 或 `ViewportSize` | 屏幕大小信息 | `None` |
+
+## 录制和调试
+
+<Warning>
+视频录制需要额外的可选依赖项。如果未安装，将不会保存视频，也不会引发错误。
+
+使用以下命令安装：
+```bash
+uv pip install "browser-use[video]"
+```
+或：
+```bash
+uv pip install imageio[ffmpeg] numpy
+```
+</Warning>
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `record_video_dir` | `str` 或 `Path` | 保存视频录制的目录 | `None` |
+| `record_video_size` | `ViewportSize` | 视频录制的帧大小 | `ViewportSize` |
+| `record_video_framerate` | `int` | 视频录制的帧率 | `30` |
+| `record_har_path` | `str` 或 `Path` | 保存网络追踪文件的路径 | `None` |
+| `traces_dir` | `str` 或 `Path` | 保存完整追踪文件的目录 | `None` |
+| `record_har_content` | `str` | HAR 内容模式 | `'embed'` |
+| `record_har_mode` | `str` | HAR 录制模式 | `'full'` |
+
+## 高级选项
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `disable_security` | `bool` | ⚠️ **不推荐** - 禁用所有浏览器安全功能 | `False` |
+| `deterministic_rendering` | `bool` | ⚠️ **不推荐** - 强制一致渲染但降低性能 | `False` |
+
+## 代理配置（旧版）
+
+为保持向后兼容性，你可以将上述所有参数传递给 `BrowserProfile`，然后传递给 `Browser`：
+
+```python
+from browser_use import BrowserProfile
+
+profile = BrowserProfile(headless=False)
+browser = Browser(browser_profile=profile)
+```
+
+## Browser vs BrowserSession
+
+`Browser` 是 `BrowserSession` 的别名 - 它们是同一个类：
+
+```python
+from browser_use import Browser, BrowserSession
+
+# 两者完全相同
+browser1 = Browser(headless=False)
+browser2 = BrowserSession(headless=False)
+
+print(type(browser1) == type(browser2))  # True
+```
+
+为获得更清晰、更直观的代码，请使用 `Browser`。
+
+## 相关资源
+
+- [浏览器基础](./basics.mdx)
+- [Actor 所有参数](/customize/actor/all-parameters)
+- [真实浏览器](./real-browser.mdx)
+- [远程浏览器](./remote.mdx)

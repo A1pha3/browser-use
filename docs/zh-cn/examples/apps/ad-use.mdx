@@ -1,0 +1,96 @@
+---
+title: "Ad-Use (广告生成器)"
+description: "使用浏览器代理、Google 的 Nano Banana 🍌 和 Veo3，根据落地页生成 Instagram 图片广告和 TikTok 视频广告。"
+icon: "image"
+mode: "wide"
+---
+
+<Note>
+  此演示需要 browser-use v0.7.6+ 版本。
+</Note>
+
+<video
+  controls
+  className="w-full aspect-video rounded-xl"
+  src="https://github.com/user-attachments/assets/7fab54a9-b36b-4fba-ab98-a438f2b86b7e">
+</video>
+
+## 功能特点
+
+1. 代理访问您的目标网站
+2. 捕获品牌名称、标语和关键卖点
+3. 拍摄干净的屏幕截图作为设计参考
+4. 使用 🍌 创建吸引眼球的 Instagram 图片广告
+5. 使用 Veo3 生成病毒式传播的 TikTok 视频广告
+6. 支持并行生成多个广告
+
+## 设置
+
+确保安装了最新版本的 browser-use（带屏幕截图功能）：
+```bash
+pip install -U browser-use
+```
+
+导出您的 Gemini API 密钥，从 [Google AI Studio](https://makersuite.google.com/app/apikey) 获取：
+```
+export GOOGLE_API_KEY='your-google-api-key-here'
+```
+
+克隆仓库并进入应用文件夹
+```bash
+git clone https://github.com/browser-use/browser-use.git
+cd browser-use/examples/apps/ad-use
+```
+
+## 常规使用
+
+```bash
+# 基础功能 - 生成 Instagram 图片广告（默认）
+python ad_generator.py --url https://www.apple.com/iphone-16-pro/
+
+# 使用 Veo3 生成 TikTok 视频广告
+python ad_generator.py --tiktok --url https://www.apple.com/iphone-16-pro/
+
+# 并行生成多个广告
+python ad_generator.py --instagram --count 3 --url https://www.apple.com/iphone-16-pro/
+python ad_generator.py --tiktok --count 2 --url https://www.apple.com/iphone-16-pro/
+
+# 调试模式 - 查看浏览器操作
+python ad_generator.py --url https://www.apple.com/iphone-16-pro/ --debug
+```
+
+## 命令行选项
+
+- `--url`: 要分析的落地页 URL
+- `--instagram`: 生成 Instagram 图片广告（未指定标志时的默认值）
+- `--tiktok`: 使用 Veo3 生成 TikTok 视频广告
+- `--count N`: 并行生成 N 个广告（默认值：1）
+- `--debug`: 显示浏览器窗口并启用详细日志记录
+
+## 编程方式使用
+
+```python
+import asyncio
+from ad_generator import create_ad_from_landing_page
+
+async def main():
+    results = await create_ad_from_landing_page(
+        url="https://your-landing-page.com",
+        debug=False
+    )
+    print(f"生成的广告: {results}")
+
+asyncio.run(main())
+```
+
+## 输出
+
+生成广告保存在 `output/` 目录中：
+- **PNG 图片文件** (ad_timestamp.png) - 使用 Gemini 2.5 Flash Image 生成的 Instagram 广告
+- **MP4 视频文件** (ad_timestamp.mp4) - 使用 Veo3 生成的 TikTok 广告
+- **分析文件** (analysis_timestamp.txt) - 浏览器代理分析和使用的提示词
+- **落地页截图** (landing_page_timestamp.png) - 参考屏幕截图
+
+## 源代码
+
+完整实现：[https://github.com/browser-use/browser-use/tree/main/examples/apps/ad-use](https://github.com/browser-use/browser-use/tree/main/examples/apps/ad-use)

@@ -1,0 +1,66 @@
+---
+title: "示例：产品提取"
+description: "收集数千个产品并保存为 CSV 文件。"
+icon: "database"
+---
+
+## 概述
+
+本示例展示如何从电子商务网站提取大量产品数据并保存为文件。
+
+## 使用场景
+
+从多个类别提取 1000 多个产品，包括：
+- 产品 URL
+- 名称和描述
+- 原价和促销价
+- 折扣百分比
+
+将所有内容保存为 CSV 文件以供进一步分析。
+
+## 代码
+
+```python
+import asyncio
+from browser_use.code_use import CodeAgent
+
+async def main():
+    task = """
+    访问 https://www.flipkart.com。
+    从以下类别收集约 50 个产品：
+
+    1. 书籍和媒体 - 15 个产品
+    2. 运动和健身 - 15 个产品
+    3. 美容和个人护理 - 10 个产品
+
+    保存到 products.csv
+    """
+
+    agent = CodeAgent(task=task)
+    await agent.run()
+
+asyncio.run(main())
+```
+
+## 工作原理
+
+1. **代理导航**到电子商务网站
+2. **编写 JavaScript** 从每个页面提取产品数据
+3. **循环遍历类别**收集产品
+4. **存储在变量中**并在步骤之间保持
+5. **保存到 CSV** 使用 pandas 或 csv 模块
+6. **返回确定性代码**你可以修改并重新运行
+
+## 主要优势
+
+- **函数重用**：提取代码编写一次，多次使用
+- **规模**：轻松收集数百或数千个项目
+- **确定性**：生成的 Python 代码可以保存并重新运行
+- **数据处理**：内置 pandas 支持数据清洗和转换
+
+[在 GitHub 上查看完整示例 →](https://github.com/browser-use/browser-use/blob/main/examples/code_agent/extract_products.py)
+
+## 相关资源
+
+- [代码代理基础](./basics.mdx)
+- [代码代理所有参数](./all-parameters.mdx)

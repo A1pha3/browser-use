@@ -1,0 +1,128 @@
+---
+title: '开发'
+description: '本地预览更改以更新文档'
+mode: "wide"
+---
+
+<Info>
+  **前置条件**: 请在继续之前安装 Node.js（版本 19 或更高）。
+</Info>
+
+按照以下步骤在操作系统上安装和运行 Mintlify：
+
+**第一步**: 安装 Mintlify：
+
+<CodeGroup>
+
+```bash npm
+npm i -g mintlify
+```
+
+```bash yarn
+yarn global add mintlify
+```
+
+</CodeGroup>
+
+**第二步**: 导航到文档目录（mint.json 文件所在的位置）并执行以下命令：
+
+```bash
+mintlify dev
+```
+
+文档的本地预览将在 `http://localhost:3000` 上提供。
+
+### 自定义端口
+
+默认情况下，Mintlify 使用端口 3000。您可以使用 `--port` 标志自定义 Mintlify 运行的端口。例如，要在端口 3333 上运行 Mintlify，请使用以下命令：
+
+```bash
+mintlify dev --port 3333
+```
+
+如果您尝试在已使用的端口上运行 Mintlify，它将使用下一个可用端口：
+
+```md
+端口 3000 已被使用。正在尝试 3001。
+```
+
+## Mintlify 版本
+
+请注意，每个 CLI 版本都与特定版本的 Mintlify 相关联。如果您的本地网站与生产版本不一致，请更新 CLI：
+
+<CodeGroup>
+
+```bash npm
+npm i -g mintlify@latest
+```
+
+```bash yarn
+yarn global upgrade mintlify
+```
+
+</CodeGroup>
+
+## 验证链接
+
+CLI 可以帮助验证文档中引用的链接。要识别任何断开的链接，请使用以下命令：
+
+```bash
+mintlify broken-links
+```
+
+## 部署
+
+<Tip>
+  [Pro 计划](https://mintlify.com/pricing) 及以上版本提供无限编辑器。
+</Tip>
+
+如果部署成功，您应该看到以下内容：
+
+<Frame>
+  <img src="/images/checks-passed.png" style={{ borderRadius: '0.5rem' }} />
+</Frame>
+
+## 代码格式化
+
+我们建议在 IDE 上使用扩展来识别和格式化 MDX。如果您是 VSCode 用户，请考虑使用 [MDX VSCode 扩展](https://marketplace.visualstudio.com/items?itemName=unifiedjs.vscode-mdx) 进行语法高亮，以及 [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) 进行代码格式化。
+
+## 故障排除
+
+<AccordionGroup>
+  <Accordion title='错误：无法加载 "sharp" 模块，使用 darwin-arm64 运行时'>
+
+    这可能是由于节点版本过旧。尝试以下操作：
+    1. 删除当前安装的 mintlify 版本：`npm remove -g mintlify`
+    2. 升级到 Node v19 或更高版本。
+    3. 重新安装 mintlify：`npm install -g mintlify`
+  </Accordion>
+
+  <Accordion title="问题：遇到未知错误">
+
+    解决方案：转到设备的根目录并删除 \~/.mintlify 文件夹。之后，再次运行 `mintlify dev`。
+  </Accordion>
+</AccordionGroup>
+
+想了解 CLI 版本中有哪些变化吗？[查看 CLI 更新日志。](https://www.npmjs.com/package/mintlify?activeTab=versions)
+
+# 开发工作流程
+
+## 分支
+- **`stable`**: 镜像最新的稳定发布版本。此分支仅在发布新的稳定版本时更新（每隔几周）。
+- **`main`**: 主要开发分支。此分支更新频繁（每小时或更长时间）。
+
+## 标签
+- **`x.x.x`**: 稳定发布标签。这些是为稳定发布创建的，每隔几周更新一次。
+- **`x.x.xrcXX`**: 预发布标签。这些是为不稳定的预发布创建的，每周五下午 5 点 UTC 更新。
+
+## 工作流程总结
+1. **推送到 `main`**:
+   - 运行 pre-commit hooks 来修复格式。
+   - 执行测试以确保代码质量。
+
+2. **发布新版本**:
+   - 如果标签是预发布 (`x.x.xrcXX`)，则将包作为预发布推送到 PyPI。
+   - 如果标签是稳定发布 (`x.x.x`)，则将包作为稳定发布推送到 PyPI，并更新 `stable` 分支以匹配发布。
+
+3. **计划的预发布**:
+   - 每周五下午 5 点 UTC，从 `main` 分支创建新的预发布标签 (`x.x.xrcXX`) 并推送到仓库。

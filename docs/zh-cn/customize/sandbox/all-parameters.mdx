@@ -1,0 +1,77 @@
+---
+title: "所有参数"
+description: "沙箱配置参考。"
+icon: "sliders"
+---
+
+## 参数参考
+
+| 参数 | 类型 | 说明 | 默认值 |
+|-----|------|------|--------|
+| `BROWSER_USE_API_KEY` | `str` | API Key（或环境变量） | 必需 |
+| `cloud_profile_id` | `str` | 浏览器配置 UUID | `None` |
+| `cloud_proxy_country_code` | `str` | us, uk, fr, it, jp, au, de, fi, ca, in | `None` |
+| `cloud_timeout` | `int` | 超时时间（分钟，免费：最大 15，付费：最大 240） | `None` |
+| `on_browser_created` | `Callable` | 实时 URL 回调 | `None` |
+| `on_log` | `Callable` | 日志事件回调 | `None` |
+| `on_result` | `Callable` | 成功回调 | `None` |
+| `on_error` | `Callable` | 错误回调 | `None` |
+
+## 使用示例
+
+```python
+@sandbox(
+    cloud_profile_id='550e8400-e29b-41d4-a716-446655440000',
+    cloud_proxy_country_code='us',
+    cloud_timeout=60,
+    on_browser_created=lambda data: print(f'实时地址: {data.live_url}'),
+)
+async def task(browser: Browser):
+    agent = Agent(task="你的任务", browser=browser, llm=ChatBrowserUse())
+    await agent.run()
+```
+
+## 参数详解
+
+### cloud_profile_id
+
+浏览器配置 ID，用于同步本地 Cookie 和认证状态。
+
+```python
+@sandbox(cloud_profile_id='your-profile-uuid')
+async def task(browser: Browser):
+    pass
+```
+
+### cloud_proxy_country_code
+
+代理国家代码，用于绕过验证码、Cloudflare 和地理限制。
+
+```python
+# 使用美国代理
+@sandbox(cloud_proxy_country_code='us')
+async def task(browser: Browser):
+    pass
+```
+
+### cloud_timeout
+
+会话超时时间（分钟）。
+
+```python
+# 免费账户最大 15 分钟
+@sandbox(cloud_timeout=15)
+async def task(browser: Browser):
+    pass
+
+# 付费账户最大 240 分钟
+@sandbox(cloud_timeout=240)
+async def task(browser: Browser):
+    pass
+```
+
+## 相关资源
+
+- [沙箱快速开始](./quickstart.mdx)
+- [沙箱事件](./events.mdx)
+- [生产环境部署](/production)

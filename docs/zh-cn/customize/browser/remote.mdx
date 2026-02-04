@@ -1,0 +1,90 @@
+---
+title: "远程浏览器"
+description: "使用云端浏览器或 CDP URL 连接远程浏览器实例。"
+icon: "cloud"
+mode: "wide"
+---
+
+## Browser Use 云端浏览器或 CDP URL
+
+使用云端浏览器的最简单方式是使用内置的 Browser Use 云服务：
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+
+# 简单方式：使用 Browser Use 云浏览器服务
+browser = Browser(
+    use_cloud=True,  # 自动配置云端浏览器
+)
+
+# 高级配置：配置云端浏览器参数
+# 使用这些设置可以绕过任何网站的验证码保护
+browser = Browser(
+    cloud_profile_id='your-profile-id',  # 可选：特定浏览器配置
+    cloud_proxy_country_code='us',  # 可选：代理位置（us, uk, fr, it, jp, au, de, fi, ca, in）
+    cloud_timeout=30,  # 可选：会话超时（分钟，免费：最大 15，付费：最大 240）
+)
+
+# 或使用来自任何云浏览器提供商的 CDP URL
+browser = Browser(
+    cdp_url="http://remote-server:9222"  # 从任何提供商获取 CDP URL
+)
+
+agent = Agent(
+    task="你的任务",
+    llm=ChatBrowserUse(),
+    browser=browser,
+)
+```
+
+**前置条件：**
+1. 从 [cloud.browser-use.com](https://cloud.browser-use.com/new-api-key) 获取 API Key
+2. 设置 `BROWSER_USE_API_KEY` 环境变量
+
+**云端浏览器参数：**
+| 参数 | 说明 |
+|-----|------|
+| `cloud_profile_id` | 浏览器配置的 UUID（可选，不指定则使用默认配置） |
+| `cloud_proxy_country_code` | 代理位置国家代码 - 支持：us, uk, fr, it, jp, au, de, fi, ca, in |
+| `cloud_timeout` | 会话超时时间（分钟）（免费用户：最大 15 分钟，付费用户：最大 240 分钟） |
+
+**优势：**
+- ✅ 无需本地浏览器设置
+- ✅ 可扩展且快速的云端基础设施
+- ✅ 自动配置和清理
+- ✅ 内置认证处理
+- ✅ 针对浏览器自动化优化
+- ✅ 全球代理支持，适用于地理限制内容
+
+## 第三方云浏览器
+
+你可以传入来自任何远程浏览器的 CDP URL。
+
+## 代理连接
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+from browser_use.browser import ProxySettings
+
+browser = Browser(
+    headless=False,
+    proxy=ProxySettings(
+        server="http://proxy-server:8080",
+        username="proxy-user",
+        password="proxy-pass"
+    ),
+    cdp_url="http://remote-server:9222"
+)
+
+agent = Agent(
+    task="你的任务",
+    llm=ChatBrowserUse(),
+    browser=browser,
+)
+```
+
+## 相关资源
+
+- [云端快速开始](/customize/browser/basics)
+- [真实浏览器](./real-browser.mdx)
+- [沙箱部署](/customize/sandbox/quickstart)

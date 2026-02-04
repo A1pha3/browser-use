@@ -1,0 +1,140 @@
+---
+title: "代码代理基础"
+description: "使用 Python 代码进行本地开发和浏览器自动化。"
+icon: "code"
+---
+
+## 概述
+
+**CodeAgent** 是一种特殊的代理类型，它能够编写和执行本地 Python 代码，同时具备浏览器自动化能力。它专为需要生成可重用函数的重复性数据提取任务而设计。
+
+<Warning>
+CodeAgent 会在你的本地机器上执行 Python 代码，类似于 Claude Code。
+</Warning>
+
+## 快速开始
+
+```python
+import asyncio
+from browser_use import CodeAgent
+from dotenv import load_dotenv
+
+load_dotenv()
+
+async def main():
+    task = "从 example.com 提取所有产品并保存到 products.csv"
+
+    agent = CodeAgent(task=task)
+    await agent.run()
+
+asyncio.run(main())
+```
+
+```bash .env
+BROWSER_USE_API_KEY=your-api-key
+```
+
+<Note>
+CodeAgent 目前仅支持 [ChatBrowserUse](/supported-models)，该模型已针对此用例进行了优化。
+还没有账号？点击[此处](https://cloud.browser-use.com/new-api-key)获取 $10 免费额度开始使用。
+</Note>
+
+## 适用场景
+
+**最佳使用场景：**
+- 大规模数据提取（100-1000 个项目）
+- 可以重用函数的重复性交互
+- 需要数据处理和文件操作的任务
+- 希望重新运行的确定性工作流
+
+**性能特点：**
+- 数据收集任务最佳性能
+- 一次性交互比标准 Agent 略慢
+
+**输出特点：**
+- 生成可确定性重新运行的 Python 代码
+- 非常适合优化提取逻辑
+
+## 代码块示例
+
+代理将用不同语言编写代码块，结合 JavaScript 的浏览器交互能力和 Python 的数据处理能力：
+
+```js extract_products
+(function(){
+  return Array.from(document.querySelectorAll('.product')).map(p => ({
+    name: p.querySelector('.name').textContent,
+    price: p.querySelector('.price').textContent
+  }))
+})()
+```
+```python
+import pandas as products = await evaluate(extract_products)  # 重用其他代码块
+df = pd.DataFrame(products)
+df.to_csv('products.csv', index=False)
+```
+
+## 可用库
+
+代理可以使用常用的 Python 库：
+
+| 类别 | 库 |
+|-----|-----|
+| 数据处理 | `pandas`、`numpy` |
+| 网络请求 | `requests`、`BeautifulSoup` |
+| 文件格式 | `csv`、`json`、`openpyxl`（Excel） |
+| 可视化 | `matplotlib` |
+| 工具类 | `tabulate`、`datetime`、`re` |
+
+## 可用工具
+
+代理可以访问以下浏览器控制函数：
+
+| 函数 | 说明 |
+|-----|------|
+| `navigate(url)` | 导航到 URL |
+| `click(index)` | 按索引点击元素 |
+| `input(index, text)` | 向输入框输入文本 |
+| `scroll(down, pages)` | 滚动页面 |
+| `upload_file(path)` | 上传文件 |
+| `evaluate(code, variables={})` | 执行 JavaScript 并返回结果 |
+| `done(text, success, files_to_display=[])` | 标记任务完成 |
+
+## 导出会话
+
+CodeAgent 会自动保存会话期间执行的所有代码和 JavaScript 代码块。你可以导出完整的自动化工作流以供分享、版本控制或重新运行。
+
+### 快速导出
+
+```python
+from browser_use.code_use.notebook_export import export_to_ipynb, session_to_python_script
+
+# 运行代理后
+await agent.run()
+
+# 导出为 Jupyter notebook
+notebook_path = export_to_ipynb(agent, "my_automation.ipynb")
+
+# 导出为 Python 脚本
+script = session_to_python_script(agent)
+with open("my_automation.py", "w") as f:
+    f.write(script)
+```
+
+### 导出格式
+
+| 格式 | 用途 |
+|-----|------|
+| **Jupyter Notebook (.ipynb)** | 交互式开发、分享、文档 |
+| **Python Script (.py)** | 生产部署、版本控制、自动化 |
+
+两种格式都包括：
+- 包含浏览器初始化的设置代码
+- 作为 Python 变量的 JavaScript 代码块
+- 所有已执行的 Python 单元格及输出
+- 可直接运行的自动化工作流
+
+## 相关资源
+
+- [代码代理所有参数](./all-parameters.mdx)
+- [代码代理导出](./exporting.mdx)
+- [代码代理输出格式](./output-format.mdx)

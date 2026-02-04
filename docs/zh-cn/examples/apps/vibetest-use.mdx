@@ -1,0 +1,150 @@
+---
+title: "Vibetest-Use（自动化 QA）"
+description: "运行多代理 Browser-Use 测试，在发布前捕获 UI 错误、损坏的链接和可访问性问题。"
+icon: "bug"
+mode: "wide"
+---
+
+<Note>
+需要 **browser-use < v0.5.0** 和 Playwright Chromium。目前正在更新到 v0.7.6+。
+</Note>
+
+<video
+  controls
+  className="w-full aspect-video rounded-xl"
+  src="https://github.com/user-attachments/assets/6450b5b7-10e5-4019-82a4-6d726dbfbe1f">
+</video>
+
+## 功能特性
+
+1. 并行启动多个无头（或可见）Browser-Use 代理
+2. 爬取你的网站并记录截图、损坏的链接和可访问性问题
+3. 适用于生产环境 URL 和 `localhost` 开发服务器
+4. 通过 Cursor / Claude Code 中的 MCP 进行简单的自然语言提示
+
+## 快速开始
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/browser-use/vibetest-use.git
+cd vibetest-use
+
+# 2. 创建并激活环境
+uv venv --python 3.11
+source .venv/bin/activate
+
+# 3. 安装项目
+uv pip install -e .
+
+# 4. 安装浏览器运行时
+uvx browser-use install
+```
+
+### 1) Claude Code
+
+```bash
+# 注册 MCP 服务器
+claude mcp add vibetest /full/path/to/vibetest-use/.venv/bin/vibetest-mcp \
+  -e GOOGLE_API_KEY="your_api_key"
+
+# 在 Claude 对话中
+> /mcp
+# ⎿  MCP 服务器状态
+#    • vibetest: 已连接
+```
+
+### 2) Cursor（手动 MCP 条目）
+
+1. 打开 **设置 → MCP**
+2. 点击 **添加服务器**并粘贴：
+
+```json
+{
+  "mcpServers": {
+    "vibetest": {
+      "command": "/full/path/to/vibetest-use/.venv/bin/vibetest-mcp",
+      "env": {
+        "GOOGLE_API_KEY": "your_api_key"
+      }
+    }
+  }
+}
+```
+
+## 基本提示
+
+```
+> 使用 5 个代理测试我的网站：browser-use.com
+> 在 localhost:3000 上运行 vibetest
+> 在 localhost:8080 上运行无头 vibetest，使用 10 个代理
+```
+
+### 参数
+
+- **URL** - 任何 `https` 或 `http` 主机或 `localhost:端口`
+- **代理** - 默认为 3 个；更多代理 = 更深入的覆盖
+- **无头** - 说 *headless* 以隐藏浏览器，不说则观看实时操作
+
+## 要求
+
+- Python 3.11+
+- Google API key（用于分析的 Gemini flash）
+- 支持 MCP 的 Cursor / Claude
+
+## 使用场景
+
+### 1. 生产网站测试
+
+```bash
+# 测试生产网站，使用 5 个代理
+> 使用 5 个代理测试 https://myapp.com
+```
+
+### 2. 本地开发测试
+
+```bash
+# 测试本地开发服务器
+> 在 localhost:3000 上运行 vibetest
+```
+
+### 3. 深度测试
+
+```bash
+# 使用 10 个代理进行深度测试
+> 使用 10 个代理在 localhost:8080 上运行无头 vibetest
+```
+
+## 输出示例
+
+```
+✅ 发现 3 个截图
+🔗 发现 2 个损坏的链接
+♿ 发现 1 个可访问性问题
+```
+
+## 高级配置
+
+### 自定义测试参数
+
+```python
+from vibetest import VibetestRunner
+
+runner = VibetestRunner(
+    url="https://myapp.com",
+    num_agents=10,  # 更多代理 = 更深入的测试
+    headless=False,  # 设为 True 以提高速度
+    timeout=300,  # 超时时间（秒）
+)
+
+results = runner.run()
+```
+
+## 源代码
+
+完整实现：[https://github.com/browser-use/vibetest-use](https://github.com/browser-use/vibetest-use)
+
+## 相关资源
+
+- [GitHub 仓库](https://github.com/browser-use/vibetest-use)
+- [MCP 集成](/customize/integrations/mcp-server.mdx)
+- [更多示例](../templates/more-examples.mdx)

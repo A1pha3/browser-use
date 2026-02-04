@@ -1,0 +1,457 @@
+---
+title: "支持的模型"
+description: "选择你喜欢的 LLM 提供商。"
+icon: "microchip-ai"
+---
+
+## 概述
+
+Browser Use 支持多种大语言模型（LLM）提供商，包括 OpenAI、Anthropic、Google、AWS Bedrock 等。你可以根据需求选择最适合的模型。
+
+## 模型对比
+
+| 模型 | 推荐场景 | 速度 | 准确性 | 成本 |
+|-----|---------|-----|-------|-----|
+| **ChatBrowserUse** | 浏览器自动化专用 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 中等 |
+| **OpenAI o3** | 复杂推理任务 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 较高 |
+| **Anthropic Claude** | 长上下文理解 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 较高 |
+| **Google Gemini** | 多模态任务 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 低 |
+| **AWS Bedrock** | 企业合规需求 | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 按需付费 |
+| **Ollama（本地）** | 隐私保护 | ⭐⭐⭐ | ⭐⭐⭐ | 免费 |
+
+## ChatBrowserUse（推荐）
+
+[示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/browser_use_llm.py)
+
+`ChatBrowserUse()` 是我们专门为浏览器自动化优化的自研模型，在保持高准确性的同时，完成任务的速度比其他模型快 **3-5 倍**。
+
+```python
+from browser_use import Agent, ChatBrowserUse
+
+# 初始化模型（默认使用 bu-latest）
+llm = ChatBrowserUse()
+
+# 或者使用高级模型
+llm = ChatBrowserUse(model='bu-2-0')
+
+# 创建代理
+agent = Agent(
+    task="你的任务",
+    llm=llm
+)
+```
+
+### 环境变量
+
+```bash .env
+BROWSER_USE_API_KEY=
+```
+
+获取 API Key：[https://cloud.browser-use.com/new-api-key](https://cloud.browser-use.com/new-api-key)。新用户通过 OAuth 注册可获得 $10 免费额度，通过邮箱注册可获得 $1。
+
+### 可用模型
+
+| 模型名称 | 类型 | 特点 |
+|---------|------|------|
+| `bu-latest` / `bu-1-0` | 默认模型 | 性价比高，适合大多数任务 |
+| `bu-2-0` | 高级模型 | 能力更强，适合复杂任务 |
+
+### 价格（每百万 Token）
+
+**bu-1-0 / bu-latest（默认）**
+
+| Token 类型 | 价格 |
+|-----------|------|
+| 输入 Token | $0.20 |
+| 缓存 Token | $0.02 |
+| 输出 Token | $2.00 |
+
+**bu-2-0（高级）**
+
+| Token 类型 | 价格 |
+|-----------|------|
+| 输入 Token | $0.60 |
+| 缓存 Token | $0.06 |
+| 输出 Token | $3.50 |
+
+## OpenAI
+
+[示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/gpt-4.1.py)
+
+推荐使用 `o3` 模型以获得最佳准确性。
+
+```python
+from browser_use import Agent, ChatOpenAI
+
+# 初始化模型
+llm = ChatOpenAI(
+    model="o3",
+)
+
+# 创建代理
+agent = Agent(
+    task="你的任务",
+    llm=llm
+)
+```
+
+### 环境变量
+
+```bash .env
+OPENAI_API_KEY=
+```
+
+<Info>
+你可以通过传入自定义 URL（或其他参数）来使用任何 OpenAI 兼容的模型。
+</Info>
+
+## Anthropic Claude
+
+[示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/claude-4-sonnet.py)
+
+```python
+from browser_use import Agent, ChatAnthropic
+
+# 初始化模型
+llm = ChatAnthropic(
+    model="claude-sonnet-4-0",
+)
+
+# 创建代理
+agent = Agent(
+    task="你的任务",
+    llm=llm
+)
+```
+
+### 环境变量
+
+```bash .env
+ANTHROPIC_API_KEY=
+```
+
+## Google Gemini
+
+[示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/gemini.py)
+
+<Warning>
+`GEMINI_API_KEY` 已弃用，应使用 `GOOGLE_API_KEY`。
+</Warning>
+
+```python
+from browser_use import Agent, ChatGoogle
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
+
+# 初始化模型
+llm = ChatGoogle(model='gemini-flash-latest')
+
+# 创建代理
+agent = Agent(
+    task="你的任务",
+    llm=llm
+)
+```
+
+### 环境变量
+
+```bash .env
+GOOGLE_API_KEY=
+```
+
+获取 API Key：[https://aistudio.google.com/app/u/1/apikey?pli=1](https://aistudio.google.com/app/u/1/apikey?pli=1)
+
+## AWS Bedrock
+
+[示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/aws.py)
+
+AWS Bedrock 通过单一 API 提供对多种模型提供商的访问。
+
+### 通用 Bedrock 客户端（支持所有提供商）
+
+```python
+from browser_use import Agent, ChatAWSBedrock
+
+# 支持任何 Bedrock 模型
+llm = ChatAWSBedrock(
+    model="anthropic.claude-3-5-sonnet-20240620-v1:0",
+    aws_region="us-east-1",
+)
+
+# 创建代理
+agent = Agent(
+    task="你的任务",
+    llm=llm
+)
+```
+
+### Anthropic Claude 专用客户端
+
+```python
+from browser_use import Agent, ChatAnthropicBedrock
+
+# Anthropic 专用类，使用 Claude 默认配置
+llm = ChatAnthropicBedrock(
+    model="anthropic.claude-3-5-sonnet-20240620-v1:0",
+    aws_region="us-east-1",
+)
+
+# 创建代理
+agent = Agent(
+    task="你的任务",
+    llm=llm
+)
+```
+
+### 环境变量
+
+```bash .env
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+```
+
+### 认证方式
+
+除了环境变量外，还支持：
+
+- AWS 配置文件和凭证文件
+- IAM 角色（运行在 EC2 上时）
+- 临时凭证的会话令牌
+- AWS SSO 认证（`aws_sso_auth=True`）
+
+## Azure OpenAI
+
+[示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/azure_openai.py)
+
+```python
+from browser_use import Agent, ChatAzureOpenAI
+from pydantic import SecretStr
+import os
+
+# 初始化模型
+llm = ChatAzureOpenAI(
+    model="o4-mini",
+)
+
+# 创建代理
+agent = Agent(
+    task="你的任务",
+    llm=llm
+)
+```
+
+### 环境变量
+
+```bash .env
+AZURE_OPENAI_ENDPOINT=https://your-endpoint.openai.azure.com/
+AZURE_OPENAI_API_KEY=
+```
+
+### 使用 Responses API（GPT-5.1 Codex 模型）
+
+<Info>
+Azure OpenAI 某些模型（如 `gpt-5.1-codex-mini`）需要 `api_version >= 2025-03-01-preview`，这些模型仅支持 [Responses API](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/responses) 而非 Chat Completions API。
+</Info>
+
+Browser Use 会自动检测并为这些模型使用 Responses API：
+
+```python
+from browser_use import Agent, ChatAzureOpenAI
+
+# 自动检测（推荐）- 为 gpt-5.1-codex-mini 使用 Responses API
+llm = ChatAzureOpenAI(
+    model="gpt-5.1-codex-mini",
+    api_version="2025-03-01-preview",
+)
+
+# 或显式启用/禁用任意模型的 Responses API
+llm = ChatAzureOpenAI(
+    model="gpt-4o",
+    api_version="2025-03-01-preview",
+    use_responses_api=True,  # 强制使用 Responses API
+)
+
+agent = Agent(
+    task="你的任务",
+    llm=llm
+)
+```
+
+`use_responses_api` 参数说明：
+
+- `'auto'`（默认）：自动为需要它的模型使用 Responses API
+- `True`：强制使用 Responses API
+- `False`：强制使用 Chat Completions API
+
+## Groq
+
+[示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/llama4-groq.py)
+
+```python
+from browser_use import Agent, ChatGroq
+
+llm = ChatGroq(model="meta-llama/llama-4-maverick-17b-128e-instruct")
+
+agent = Agent(
+    task="你的任务",
+    llm=llm
+)
+```
+
+### 环境变量
+
+```bash .env
+GROQ_API_KEY=
+```
+
+## Ollama（本地模型）
+
+Ollama 允许你在本地运行大语言模型，完全保护隐私。
+
+### 安装步骤
+
+1. 安装 Ollama：[https://github.com/ollama/ollama](https://github.com/ollama/ollama)
+2. 启动服务器：`ollama serve`
+3. 在新终端中安装模型：`ollama pull llama3.1:8b`
+
+```python
+from browser_use import Agent, ChatOllama
+
+llm = ChatOllama(model="llama3.1:8b")
+```
+
+### 推荐模型
+
+| 模型 | 大小 | 特点 |
+|-----|------|------|
+| llama3.1:8b | ~4.9 GB | 性价比高，适合大多数任务 |
+| llama3.1:70b | ~39 GB | 能力更强，需要更多资源 |
+| qwen2.5:7b | ~4.5 GB | 中文支持好 |
+
+## 其他兼容 OpenAI API 的模型
+
+我们支持所有可以通过 OpenAI 兼容 API 调用的模型。
+
+### DeepSeek
+
+[示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/deepseek-chat.py)
+
+```python
+from browser_use import Agent, ChatOpenAI
+import os
+
+llm = ChatOpenAI(
+    model="deepseek-chat",
+    base_url="https://api.deepseek.com/v1",
+    api_key=os.getenv("DEEPSEEK_API_KEY")
+)
+
+agent = Agent(task="你的任务", llm=llm)
+```
+
+### Novita
+
+[示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/novita.py)
+
+```python
+from browser_use import Agent, ChatOpenAI
+import os
+
+llm = ChatOpenAI(
+    model="meta-llama/llama-3-1-405b-instruct",
+    base_url="https://api.novita.ai/v3/openai",
+    api_key=os.getenv("NOVITA_API_KEY")
+)
+
+agent = Agent(task="你的任务", llm=llm)
+```
+
+### OpenRouter
+
+[示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/openrouter.py)
+
+```python
+from browser_use import Agent, ChatOpenAI
+import os
+
+llm = ChatOpenAI(
+    model="anthropic/claude-3-opus",
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY")
+)
+
+agent = Agent(task="你的任务", llm=llm)
+```
+
+## 模型选择建议
+
+### 速度优先
+
+推荐顺序：
+1. **ChatBrowserUse** - 专为浏览器自动化优化
+2. **Google Gemini Flash** - 快速响应
+3. **Groq** - 高速推理
+
+### 准确性优先
+
+推荐顺序：
+1. **OpenAI o3** - 复杂推理能力强
+2. **Anthropic Claude** - 长上下文理解好
+3. **ChatBrowserUse** - 平衡速度和准确性
+
+### 成本优先
+
+推荐顺序：
+1. **Ollama（本地）** - 完全免费
+2. **Google Gemini** - 性价比高
+3. **ChatBrowserUse** - 按需付费
+
+### 企业合规
+
+推荐顺序：
+1. **AWS Bedrock** - 企业级安全
+2. **Azure OpenAI** - 合规认证
+3. **私有化部署 Ollama** - 完全本地化
+
+## 常见问题
+
+### Q: 哪个模型最适合浏览器自动化？
+
+A: **ChatBrowserUse** 是专门为浏览器自动化任务优化的模型，在准确性和速度之间取得了最佳平衡。平均完成任务的速度比其他模型快 3-5 倍。
+
+### Q: 可以使用本地模型吗？
+
+A: 可以。使用 **Ollama** 可以在本地运行模型，完全保护数据隐私。推荐使用 llama3.1:8b 或更大的模型。
+
+### Q: 如何切换不同的模型？
+
+A: 只需更改 LLM 初始化代码：
+
+```python
+# 使用 ChatBrowserUse
+llm = ChatBrowserUse()
+
+# 切换到 OpenAI
+llm = ChatOpenAI(model="gpt-4o")
+
+# 切换到 Anthropic
+llm = ChatAnthropic(model="claude-sonnet-4-0")
+```
+
+### Q: 模型调用失败怎么办？
+
+A: 检查以下几点：
+
+1. **API Key 是否正确**：确保环境变量设置正确
+2. **余额是否充足**：检查 API 提供商的账户余额
+3. **网络连接**：确保能够访问 API 端点
+4. **模型是否可用**：确认模型名称和版本正确
+
+## 相关资源
+
+- [快速开始](./quickstart.mdx)
+- [Agent 配置参数](/customize/agent/all-parameters)
+- [生产环境部署](./production.mdx)

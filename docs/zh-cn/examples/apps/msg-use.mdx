@@ -1,0 +1,142 @@
+---
+title: "Msg-Use（WhatsApp 发送器）"
+description: "使用浏览器代理和 Gemini 的 AI 驱动 WhatsApp 消息调度器。使用自然语言安排个性化消息。"
+icon: "message"
+mode: "wide"
+---
+
+<Note>
+此演示需要 browser-use v0.7.7+。
+</Note>
+
+<video
+  controls
+  className="w-full aspect-video rounded-xl"
+  src="https://browser-use.github.io/media/demos/msg_use.mp4">
+</video>
+
+## 功能特性
+
+1. 代理自动登录 WhatsApp Web
+2. 解析自然语言调度指令
+3. 使用 AI 撰写个性化消息
+4. 为未来发送安排消息或立即发送
+5. 持久会话（无需重复扫描 QR 码）
+
+## 安装
+
+确保安装了最新版本的 browser-use：
+
+```bash
+uv pip install -U browser-use
+```
+
+从 [Google AI Studio](https://makersuite.google.com/app/apikey) 获取 Gemini API Key：
+
+```bash
+export GOOGLE_API_KEY='your-gemini-api-key-here'
+```
+
+克隆仓库并进入应用文件夹：
+
+```bash
+git clone https://github.com/browser-use/browser-use.git
+cd browser-use/examples/apps/msg-use
+```
+
+## 初始登录
+
+首次设置需要扫描 QR 码：
+
+```bash
+python login.py
+```
+
+- 浏览器打开时扫描 QR 码
+- 会话将被保存以供将来使用
+
+## 正常使用
+
+### 1. 编辑消息计划
+
+在 `messages.txt` 中编辑你的计划：
+
+```text
+- 在 6 月 13 日 18:15 发送 "Hi" 给 Magnus
+- 在 20:00 告诉 Camil约会对象我想她了
+- 在 6 月 15 日给姐姐发送生日消息
+- 下周二提醒妈妈去取车
+```
+
+### 2. 测试模式
+
+查看将要发送的内容：
+
+```bash
+python scheduler.py --test
+```
+
+### 3. 运行调度器
+
+```bash
+python scheduler.py
+
+# 调试模式 - 查看浏览器操作
+python scheduler.py --debug
+
+# 自动模式 - 每隔约 30 分钟响应未读消息
+python scheduler.py --auto
+```
+
+## 程序化使用
+
+```python
+import asyncio
+from scheduler import schedule_messages
+
+async def main():
+    messages = [
+        "在 15:30 发送 hello 给 John",
+        "明天上午 9 点提醒 Sarah 关于会议"
+    ]
+    await schedule_messages(messages, debug=False)
+
+asyncio.run(main())
+```
+
+## 示例输出
+
+调度器处理自然语言并输出结构化结果：
+
+```json
+[
+  {
+    "contact": "Magnus",
+    "original_message": "Hi",
+    "composed_message": "Hi",
+    "scheduled_time": "2025-06-13 18:15"
+  },
+  {
+    "contact": "Camila",
+    "original_message": "我想她了",
+    "composed_message": "我想你 ❤️",
+    "scheduled_time": "2025-06-14 20:00"
+  },
+  {
+    "contact": "sister",
+    "original_message": "生日消息",
+    "composed_message": "生日快乐！🎉 祝你度过最美好的一天，姐妹！❤️🎂🎈",
+    "scheduled_time": "2025-06-15 09:00"
+  }
+]
+```
+
+## 源代码
+
+完整实现：[https://github.com/browser-use/browser-use/tree/main/examples/apps/msg-use](https://github.com/browser-use/browser-use/tree/main/examples/apps/msg-use)
+
+## 相关资源
+
+- [广告生成器](./ad-use.mdx)
+- [新闻聚合器](./news-use.mdx)
+- [更多示例](../templates/more-examples.mdx)

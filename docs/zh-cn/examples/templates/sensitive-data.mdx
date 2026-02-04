@@ -1,0 +1,112 @@
+---
+title: "敏感数据处理"
+description: "安全处理机密信息，避免将个人身份信息和密码发送给 LLM。"
+icon: "shield"
+mode: "wide"
+---
+
+## 概述
+
+Browser Use 提供了安全处理敏感数据的功能，可以防止机密信息被发送给 LLM。
+
+```python
+import os
+from browser_use import Agent, Browser, ChatOpenAI
+
+# 禁用遥测
+os.environ['ANONYMIZED_TELEMETRY'] = "false"
+
+company_credentials = {'x_user': 'your-real-username@email.com', 'x_pass': 'your-real-password123'}
+
+# 选项 1：所有网站可用的机密信息
+sensitive_data = company_credentials
+
+# 选项 2：按域名的机密信息（使用正则表达式）
+# sensitive_data = {
+#     'https://*.example-staging.com': company_credentials,
+#     'http*://test.example.com': company_credentials,
+#     'https://example.com': company_credentials,
+#     'https://google.com': {'g_email': 'user@gmail.com', 'g_pass': 'google_password'},
+# }
+
+agent = Agent(
+    task='使用用户名 x_user 和密码 x_pass 登录 example.com',
+    sensitive_data=sensitive_data,
+    use_vision=False,  # 禁用视觉功能，防止 LLM 在截图中看到敏感数据
+    llm=ChatOpenAI(model='gpt-4.1-mini'),
+)
+
+async def main():
+    await agent.run()
+```
+
+## 工作原理
+
+### 1. 文本过滤
+
+LLM 只会看到占位符（`x_user`、`x_pass`），我们从输入文本中过滤你的敏感数据。
+
+### 2. DOM 操作
+
+真实值在 LLM 调用后直接注入到表单字段中。
+
+## 最佳实践
+
+### 1. 使用域名白名单
+
+```python
+browser = Browser(
+    allowed_domains=['https://trusted-site.com']
+)
+```
+
+### 2. 禁用视觉功能
+
+```python
+agent = Agent(
+    task='登录网站',
+    sensitive_data=sensitive_data,
+    use_vision=False,  # 防止截图泄露
+)
+```
+
+### 3. 使用存储状态
+
+```python
+# 使用登录 Cookie 而不是密码
+browser = Browser(
+    storage_state='./auth.json'  # 保存认证状态
+)
+```
+
+## 高级配置
+
+### 按域名配置敏感数据
+
+```python
+sensitive_data = {
+    'https://*.company-internal.com': {
+        'employee_id': 'EMP123',
+        'internal_api_key': '***',
+    },
+    'https://*.thirdparty.com': {
+        'api_key': '***',
+    },
+    'default': company_credentials,  # 默认值
+}
+```
+
+### 禁用特定字段
+
+```python
+sensitive_data = {
+    'api_key': True,  # 标记为敏感但不指定具体值
+    'password': True,
+}
+```
+
+## 相关资源
+
+- [安全配置](../templates/secure.mdx)
+- [浏览器安全配置](/customize/browser/basics.mdx)
+- [代理基础配置](/customize/agent/basics.mdx)

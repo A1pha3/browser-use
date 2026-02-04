@@ -1,0 +1,109 @@
+---
+title: "输出格式"
+description: "了解 CodeAgent 返回值以及如何访问执行历史。"
+icon: "arrow-right-to-bracket"
+mode: "wide"
+---
+
+## NotebookSession
+
+`run()` 方法返回包含所有执行的代码单元及其结果的 `NotebookSession` 对象：
+
+```python
+session = await agent.run()
+
+# 访问基本属性
+session.id                      # 唯一会话标识符
+session.cells                  # CodeCell 对象列表
+session.current_execution_count # 已执行单元格的总数
+session.namespace              # 包含所有执行变量的字典
+
+# 辅助方法
+session.get_cell(cell_id)      # 按 ID 获取特定单元格
+session.get_latest_cell()      # 获取最近执行的单元格
+```
+
+## CodeCell 属性
+
+`session.cells` 中的每个单元格代表一个已执行的代码块：
+
+```python
+for cell in session.cells:
+    cell.id               # 唯一单元格标识符
+    cell.cell_type        # 'code' 或 'markdown'
+    cell.source           # 执行的代码
+    cell.output           # 代码执行输出（如果有）
+    cell.execution_count  # 执行顺序编号
+    cell.status           # 'pending'、'running'、'success' 或 'error'
+    cell.error            # 执行失败时的错误消息
+    cell.browser_state    # 执行后的浏览器状态
+```
+
+## 访问结果
+
+### 基本用法
+
+```python
+session = await agent.run()
+
+# 遍历所有已执行的单元格
+for cell in session.cells:
+    print(f"单元格 {cell.execution_count}:")
+    print(f"  代码: {cell.source}")
+    if cell.error:
+        print(f"  错误: {cell.error}")
+    elif cell.output:
+        print(f"  输出: {cell.output}")
+    print(f"  状态: {cell.status}")
+
+# 获取最后一个单元格
+last_cell = session.get_latest_cell()
+if last_cell:
+    print(f"最后输出: {last_cell.output}")
+
+# 从执行命名空间访问变量
+products = session.namespace.get('products', [])
+print(f"提取了 {len(products)} 个产品")
+```
+
+### 检查任务完成
+
+当代理调用 `done()` 时，结果存储在命名空间中：
+
+```python
+session = await agent.run()
+
+# 检查任务是否完成
+task_done = session.namespace.get('_task_done', False)
+task_result = session.namespace.get('_task_result')
+task_success = session.namespace.get('_task_success')
+
+if task_done:
+    print(f"任务完成: {task_success}")
+    print(f"结果: {task_result}")
+```
+
+### 获取所有输出
+
+```python
+session = await agent.run()
+
+# 获取所有输出（排除错误）
+outputs = [cell.output for cell in session.cells if cell.output]
+
+# 获取所有错误
+errors = [cell.error for cell in session.cells if cell.error]
+
+# 仅获取成功的单元格
+successful_cells = [cell for cell in session.cells if cell.status == 'success']
+```
+
+## 数据模型
+
+有关完整的数据模型定义，请参阅 [CodeAgent 视图源代码](https://github.com/browser-use/browser-use/blob/main/browser_use/code_use/views.py)。
+
+## 相关资源
+
+- [代码代理基础](./basics.mdx)
+- [代码代理所有参数](./all-parameters.mdx)
+- [代码代理导出](./exporting.mdx)

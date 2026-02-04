@@ -1,0 +1,104 @@
+---
+title: "技能基础"
+description: "技能是你访问任何 API 的方式。用自然语言描述你需要什么，获得一个可重复调用的生产级 API 端点。"
+icon: "sparkles"
+---
+
+## 概述
+
+**技能（Skills）** 是云端 API 的集成方式。通过技能，你可以让代理访问各种第三方服务，无需编写额外的集成代码。
+
+访问 [cloud.browser-use.com/skills](https://cloud.browser-use.com/skills) 浏览和创建技能。
+
+## 快速示例
+
+从 [cloud.browser-use.com/skills](https://cloud.browser-use.com/skills) 加载特定技能 ID 或所有技能（`['*']`）。
+
+```python
+from browser_use import Agent, ChatBrowserUse
+
+agent = Agent(
+    task='你的任务',
+    skills=['skill-uuid-1', 'skill-uuid-2'],  # 特定技能（推荐）
+    # 或
+    # skills=['*'],  # 所有技能
+    llm=ChatBrowserUse()
+)
+
+await agent.run()
+```
+
+<Info>
+小心使用 `*`。每个技能大约会向提示词贡献 200 个 Token。
+</Info>
+
+## 配置 API Key
+
+别忘了在 `.env` 文件中添加你的 API Key：
+
+```bash .env
+BROWSER_USE_API_KEY=your-api-key
+```
+
+<Note>
+在 [cloud.browser-use.com/new-api-key](https://cloud.browser-use.com/new-api-key) 获取 API Key，新用户可获得 $10 免费额度。
+</Note>
+
+## Cookie 处理
+
+Cookie 会自动从你的浏览器注入：
+
+```python
+agent = Agent(
+    task='发布一条推文"Hello World"',
+    skills=['tweet-poster-skill-id'],
+    llm=ChatBrowserUse()
+)
+
+# 代理导航到 twitter.com，按需登录，
+# 提取 Cookie 并自动传递给技能
+await agent.run()
+```
+
+如果缺少 Cookie，LLM 会看到需要哪些 Cookie 并导航获取它们。
+
+## 完整示例
+
+```python
+from browser_use import Agent, ChatBrowserUse
+from dotenv import load_dotenv
+import asyncio
+
+load_dotenv()
+
+async def main():
+    agent = Agent(
+        task='分析 TikTok 和 Instagram 资料',
+        skills=[
+            'a582eb44-e4e2-4c55-acc2-2f5a875e35e9',  # TikTok 资料抓取
+            'f8d91c2a-3b4e-4f7d-9a1e-6c8e2d3f4a5b',  # Instagram 资料抓取
+        ],
+        llm=ChatBrowserUse()
+    )
+
+    await agent.run()
+    await agent.close()
+
+asyncio.run(main())
+```
+
+## 常用技能
+
+| 技能 ID | 功能 |
+|---------|------|
+| tweet-poster | 推文发布 |
+| tiktok-scraper | TikTok 数据抓取 |
+| instagram-scraper | Instagram 数据抓取 |
+| linkedin-post | LinkedIn 帖子发布 |
+| email-sender | 邮件发送 |
+
+## 相关资源
+
+- [技能市场](https://cloud.browser-use.com/skills)
+- [沙箱快速开始](/customize/sandbox/quickstart)
+- [生产环境部署](/production)

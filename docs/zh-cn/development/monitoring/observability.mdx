@@ -1,0 +1,110 @@
+---
+title: "可观测性"
+description: "跟踪代理执行步骤和浏览器会话录制。"
+icon: "eye"
+mode: "wide"
+---
+
+## 概述
+
+Browser Use 与 [Laminar](https://laminar.sh) 原生集成 - 这是一个用于监控和分析 AI 代理错误模式的开源平台。Laminar SDK 自动捕获 Browser Use 代理的**代理执行步骤、成本和浏览器会话录制**。浏览器会话录制允许开发者查看浏览器会话的完整视频回放，这对于调试 Browser Use 代理非常有用。
+
+## 设置
+
+安装 Laminar Python SDK：
+
+```bash
+uv pip install lmnr
+```
+
+在 [Laminar Cloud](https://laminar.sh) 注册或[自托管 Laminar](https://github.com/lmnr-ai/lmnr)，创建项目并从项目设置中获取项目 API Key。设置 `LMNR_PROJECT_API_KEY` 环境变量：
+
+```bash
+export LMNR_PROJECT_API_KEY=<your-project-api-key>
+```
+
+## 使用
+
+然后，你只需在项目顶部初始化 Laminar，Browser Use 代理追踪和会话录制都会被自动捕获：
+
+```python {7-9}
+from browser_use import Agent, ChatGoogle
+import asyncio
+
+from lmnr import Laminar
+import os
+
+# 在初始化时，Laminar 自动检测
+# Browser Use 和你使用的任何浏览器（本地或远程）
+Laminar.initialize(project_api_key=os.getenv('LMNR_PROJECT_API_KEY'))
+
+async def main():
+    agent = Agent(
+        task="访问 ycombinator.com，总结最新批次中的 3 家初创公司",
+        llm=ChatGoogle(model="gemini-2.5-flash"),
+    )
+    await agent.run()
+
+asyncio.run(main())
+```
+
+## 查看追踪
+
+你可以通过转到项目中的追踪选项卡在 Laminar UI 中查看追踪。当你选择一个追踪时，可以同时看到浏览器会话录制和代理执行步骤。
+
+浏览器会话的时间线与代理执行步骤同步。在追踪视图中，你还可以看到代理的当前步骤、正在使用的工具以及工具的输入和输出。
+
+<img className="block" src="/images/laminar.png" alt="Laminar" />
+
+## Laminar
+
+要了解如何通过 Laminar 追踪和评估你的 Browser Use 代理，请查看 [Laminar 文档](https://docs.lmnr.ai)。
+
+## Browser Use 云端认证同步
+
+Browser Use 可以将你的代理运行同步到云端以便轻松查看和分享。需要认证来保护你的数据。
+
+### 快速设置
+
+```bash
+# 认证一次以启用所有未来运行的云端同步
+browser-use auth
+# 或者直接使用模块：
+python -m browser_use.cli auth
+```
+
+<Note>
+云端同步默认启用。如果你已禁用，可以使用 `export BROWSER_USE_CLOUD_SYNC=true` 重新启用。
+</Note>
+
+### 手动认证
+
+```python
+# 在代码中任务完成后进行认证
+from browser_use import Agent
+
+agent = Agent(task="你的任务")
+await agent.run()
+
+# 之后，为未来的运行进行认证
+await agent.authenticate_cloud_sync()
+```
+
+### 重置认证
+
+```bash
+# 使用不同账户强制重新认证
+rm ~/.config/browseruse/cloud_auth.json
+browser-use auth
+```
+
+<Note>
+认证使用 OAuth 设备流程 - 你必须在命令运行期间完成认证流程。轮询停止时链接会过期。
+</Note>
+
+## 相关资源
+
+- [Laminar 官网](https://laminar.sh)
+- [Laminar 文档](https://docs.lmnr.ai)
+- [遥测数据](./telemetry.mdx)
+- [成本跟踪](./costs.mdx)

@@ -1,0 +1,174 @@
+---
+title: "添加工具"
+description: "学习如何添加自定义工具来扩展代理能力。"
+icon: "plus"
+mode: "wide"
+---
+
+## 概述
+
+通过添加自定义工具，你可以扩展代理的功能，使其能够执行任意操作，如调用 API、发送邮件、访问数据库等。
+
+## 简单示例
+
+只需用 `@tools.action(...)` 装饰器装饰你的函数：
+
+```python
+from browser_use import Tools, Agent, ActionResult
+
+tools = Tools()
+
+@tools.action(description='向人类提问')
+async def ask_human(question: str) -> ActionResult:
+    answer = input(f'{question} > ')
+    return ActionResult(extracted_content=f'人类的回答：{answer}')
+
+# 在代理中使用
+agent = Agent(task='...', llm=llm, tools=tools)
+```
+
+## 装饰器参数
+
+- **`description`**（必需）- 工具的功能描述，LLM 使用这个来决定何时调用它
+- **`allowed_domains`** - 工具可以运行的域名列表（如 `['*.example.com']`），默认为所有域名
+
+## 可用对象
+
+你的函数可以访问以下对象：
+
+| 对象 | 说明 |
+|-----|------|
+| **`browser_session: BrowserSession`** | 当前浏览器会话，用于 CDP 访问 |
+| **`cdp_client`** | 直接的 Chrome DevTools Protocol 客户端 |
+| **`page_extraction_llm: BaseChatModel`** | 传入代理的 LLM，可用于自定义 LLM 调用 |
+| **`file_system: FileSystem`** | 文件系统访问 |
+| **`available_file_paths: list[str]`** | 可用于上传/处理的文件路径 |
+| **`has_sensitive_data: bool`** | 操作是否包含敏感数据 |
+
+## 浏览器交互示例
+
+你可以使用 `browser_session` 直接使用 CSS 选择器与页面元素交互：
+
+```python
+from browser_use import Tools, Agent, ActionResult, BrowserSession
+
+tools = Tools()
+
+@tools.action(description='使用 CSS 选择器点击提交按钮')
+async def click_submit_button(browser_session: BrowserSession):
+    # 获取当前页面
+    page = await browser_session.must_get_current_page()
+
+    # 使用 CSS 选择器获取元素
+    elements = await page.get_elements_by_css_selector('button[type="submit"]')
+
+    if not elements:
+        return ActionResult(extracted_content='未找到提交按钮')
+
+    # 点击第一个匹配元素
+    await elements[0].click()
+
+    return ActionResult(extracted_content='提交按钮已点击！')
+```
+
+### Page 可用方法
+
+| 方法 | 说明 |
+|-----|------|
+| `get_elements_by_css_selector(selector: str)` | 返回匹配元素的列表 |
+| `get_element_by_prompt(prompt: str, llm)` | 使用 LLM 返回元素或 None |
+| `must_get_element_by_prompt(prompt: str, llm)` | 返回元素或引发错误 |
+
+### Element 可用方法
+
+| 方法 | 说明 |
+|-----|------|
+| `click()` | 点击元素 |
+| `type(text: str)` | 向元素输入文本 |
+| `get_text()` | 获取元素文本内容 |
+
+## Pydantic 输入
+
+你可以使用 Pydantic 作为工具参数：
+
+```python
+from pydantic import BaseModel, Field
+
+class Car(BaseModel):
+    name: str = Field(description='汽车名称，如"Toyota Camry"')
+    price: int = Field(description='汽车价格（整数，单位美元），如 25000')
+
+@tools.action(description='保存汽车列表到文件')
+def save_cars(cars: list[Car]) -> str:
+    import json
+    with open('cars.json', 'w') as f:
+        json.dump([c.model_dump() for c in cars], f)
+    return f'已保存 {len(cars)} 辆汽车到文件'
+
+task = "查找汽车并保存到文件"
+```
+
+## 域名限制
+
+将工具限制在特定域名：
+
+```python
+@tools.action(
+    description='填写银行表单',
+    allowed_domains=['https://mybank.com']
+)
+def fill_bank_form(account_number: str) -> str:
+    # 仅在 mybank.com 上工作
+    return f'已为账户 {account_number} 填写表单'
+```
+
+## 高级示例
+
+自定义工具与 Playwright 集成的完整示例：
+
+**[Playwright 集成示例](https://github.com/browser-use/browser-use/blob/main/examples/browser/playwright_integration.py)**
+
+这展示了如何创建使用 Playwright 精确浏览器自动化的自定义操作。
+
+## 常见陷阱
+
+<Warning>
+代理通过**名称**注入特殊参数，而非类型。使用错误的参数名称是工具静默失败的最常见原因。
+</Warning>
+
+### ❌ 错误：使用 `browser: Browser`
+
+```python
+from browser_use import Tools, ActionResult, Browser
+
+@tools.action('我的操作')
+def my_action(browser: Browser) -> ActionResult:  # 错误！
+    # 这不会接收浏览器会话
+    pass
+```
+
+### ✅ 正确：使用 `browser_session: BrowserSession`
+
+```python
+from browser_use import Tools, ActionResult, BrowserSession
+
+@tools.action('我的操作')
+async def my_action(browser_session: BrowserSession) -> ActionResult:  # 正确！
+    page = await browser_session.must_get_current_page()
+    # 现在你可以访问浏览器
+    return ActionResult(extracted_content='完成')
+```
+
+## 关键要点
+
+1. **使用 `browser_session: BrowserSession`** - 而不是 `browser: Browser`
+2. **使用异步函数** - 与浏览器操作保持一致
+3. **返回 `ActionResult`** - 而不是纯字符串（虽然字符串可以工作，但 `ActionResult` 提供更多控制）
+4. **参数名称必须完全匹配** - 请参阅可用对象列表获取可注入参数的完整列表
+
+## 相关资源
+
+- [工具响应格式](./response.mdx)
+- [移除工具](./remove.mdx)
+- [可用工具列表](./available.mdx)
+- [工具基础](/customize/tools/basics)

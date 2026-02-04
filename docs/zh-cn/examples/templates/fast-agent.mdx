@@ -1,0 +1,100 @@
+---
+title: "快速代理"
+description: "优化代理性能以获得最大速度和效率。"
+icon: "bolt"
+mode: "wide"
+---
+
+```python
+import asyncio
+from dotenv import load_dotenv
+load_dotenv()
+
+from browser_use import Agent, BrowserProfile
+
+# 速度优化提示词
+SPEED_OPTIMIZATION_PROMPT = """
+速度优化提示词：
+- 在响应中极其简洁直接
+- 尽快达成目标
+- 尽可能使用多操作序列以减少步骤
+"""
+
+
+async def main():
+	# 1. 使用快速 LLM - Groq 上的 Llama 4 以获得超快推理
+	from browser_use import ChatGroq
+
+	llm = ChatGroq(
+		model='meta-llama/llama-4-maverick-17b-128e-instruct',
+		temperature=0.0,
+	)
+	# from browser_use import ChatGoogle
+
+	# llm = ChatGoogle(model='gemini-flash-lite-latest')
+
+	# 2. 创建速度优化的浏览器配置
+	browser_profile = BrowserProfile(
+		minimum_wait_page_load_time=0.1,
+		wait_between_actions=0.1,
+		headless=False,
+	)
+
+	# 3. 定义以速度为重点的任务
+	task = """
+	1. 前往 reddit https://www.reddit.com/search/?q=browser+agent&type=communities 
+	2. 直接点击前 5 个社区，在新标签页中打开每个社区
+	3. 找出最新帖子是关于什么，直接切换到下一个标签页
+	4. 返回每个页面的最新帖子摘要
+	"""
+
+	# 4. 创建包含所有速度优化的代理
+	agent = Agent(
+		task=task,
+		llm=llm,
+		flash_mode=True,  # 禁用 LLM 输出中的思考过程以获得最大速度
+		browser_profile=browser_profile,
+		extend_system_message=SPEED_OPTIMIZATION_PROMPT,
+	)
+
+	await agent.run()
+
+
+if __name__ == '__main__':
+	asyncio.run(main())
+```
+
+## 速度优化技术
+
+### 1. 快速 LLM 模型
+
+```python
+# Groq - 超快推理
+from browser_use import ChatGroq
+llm = ChatGroq(model='meta-llama/llama-4-maverick-17b-128e-instruct')
+
+# Google Gemini Flash - 针对速度优化
+from browser_use import ChatGoogle
+llm = ChatGoogle(model='gemini-flash-lite-latest')
+```
+
+### 2. 浏览器优化
+
+```python
+browser_profile = BrowserProfile(
+    minimum_wait_page_load_time=0.1,    # 减少等待时间
+    wait_between_actions=0.1,           # 更快的操作执行
+    headless=True,                      # 无 GUI 开销
+)
+```
+
+### 3. 代理优化
+
+```python
+agent = Agent(
+    task=task,
+    llm=llm,
+    flash_mode=True,                    # 跳过 LLM 思考过程
+    extend_system_message=SPEED_PROMPT, # 优化 LLM 行为
+)
+```

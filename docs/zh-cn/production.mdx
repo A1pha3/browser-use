@@ -1,0 +1,303 @@
+---
+title: "生产环境部署"
+description: "使用 @sandbox 包装器将本地 Browser Use 代码部署到生产环境，支持百万级代理扩展。"
+icon: "rocket-launch"
+---
+
+## 概述
+
+**沙箱（Sandbox）** 是运行 Browser Use 生产环境部署最简单的方式。我们处理代理、浏览器、持久化、认证、Cookie 和 LLM 的所有细节。代理运行在浏览器旁边，实现最低延迟。
+
+## 基础部署
+
+### 步骤一：包装现有代码
+
+只需用 `@sandbox()` 装饰器包装你的本地代码：
+
+```python
+from browser_use import Browser, sandbox, ChatBrowserUse
+from browser_use.agent.service import Agent
+import asyncio
+
+@sandbox()
+async def my_task(browser: Browser):
+    agent = Agent(
+        task="查找 Hacker News 排名第一的帖子",
+        browser=browser,
+        llm=ChatBrowserUse()
+    )
+    await agent.run()
+
+# 像调用普通异步函数一样调用
+asyncio.run(my_task())
+```
+
+### 步骤二：配置认证（可选）
+
+如果你需要在生产环境中使用已登录的浏览器配置：
+
+**第一步**：创建 API Key
+
+访问 [cloud.browser-use.com/new-api-key](https://cloud.browser-use.com/new-api-key) 或参考 [Cloud - Profiles](https://cloud.browser-use.com/dashboard/settings?tab=profiles) 获取 API Key。
+
+**第二步**：同步本地 Cookie
+
+```bash
+export BROWSER_USE_API_KEY=your_key && curl -fsSL https://browser-use.com/profile.sh | sh
+```
+
+这会打开一个浏览器窗口，让你在其中登录你的账号。完成后你会得到一个 `profile_id`。
+
+**第三步**：在生产环境中使用
+
+```python
+@sandbox(cloud_profile_id='your-profile-id')
+async def authenticated_task(browser: Browser):
+    agent = Agent(
+        task="你的已认证任务",
+        browser=browser,
+        llm=ChatBrowserUse()
+    )
+    await agent.run()
+```
+
+现在你的云端浏览器已经登录！
+
+## 添加隐身代理
+
+使用特定国家的代理来绕过验证码、Cloudflare 和地理限制：
+
+```python
+@sandbox(cloud_proxy_country_code='us')  # 通过美国代理路由
+async def stealth_task(browser: Browser):
+    agent = Agent(task="你的任务", browser=browser, llm=ChatBrowserUse())
+    await agent.run()
+```
+
+### 支持的代理国家
+
+| 国家代码 | 国家名称 |
+|---------|---------|
+| us | 美国 |
+| uk | 英国 |
+| fr | 法国 |
+| it | 意大利 |
+| jp | 日本 |
+| au | 澳大利亚 |
+| de | 德国 |
+| fi | 芬兰 |
+| ca | 加拿大 |
+| in | 印度 |
+
+## 沙箱参数
+
+### 基础参数
+
+```python
+@sandbox(
+    cloud_profile_id=None,           # 浏览器配置 ID
+    cloud_proxy_country_code=None,   # 代理国家代码
+    cloud_timeout=30,                # 会话超时（分钟）
+)
+async def task(browser: Browser):
+    pass
+```
+
+### 高级参数
+
+```python
+@sandbox(
+    cloud_profile_id='your-profile-id',
+    cloud_proxy_country_code='us',
+    cloud_timeout=60,               # 最长 60 分钟
+    max_steps=100,                  # 最大执行步数
+    max_failures=3,                 # 最大失败次数
+)
+async def advanced_task(browser: Browser):
+    agent = Agent(
+        task="你的复杂任务",
+        browser=browser,
+        llm=ChatBrowserUse(),
+    )
+    await agent.run()
+```
+
+## 云端浏览器 vs 本地浏览器
+
+| 特性 | 云端浏览器 | 本地浏览器 |
+|-----|----------|-----------|
+| **设置** | 一键开始 | 需要安装 Chromium |
+| **性能** | 优化的高性能环境 | 取决于本地资源 |
+| **隐身能力** | 高级隐身，反爬虫优化 | 基础 |
+| **扩展性** | 自动扩缩容 | 受限于本地资源 |
+| **认证同步** | 支持 | 不支持 |
+| **代理支持** | 内置 | 需要自行配置 |
+| **成本** | 按使用付费 | 免费（需自备 LLM API） |
+
+## 大规模部署最佳实践
+
+### 1. 并发执行
+
+```python
+import asyncio
+from browser_use import Browser, sandbox, ChatBrowserUse
+from browser_use.agent.service import Agent
+
+async def run_task(task_id: int):
+    @sandbox()
+    async def task(browser: Browser):
+        agent = Agent(
+            task=f"任务 {task_id}：处理特定数据",
+            browser=browser,
+            llm=ChatBrowserUse()
+        )
+        await agent.run()
+    await task()
+
+async def main():
+    # 并发运行多个任务
+    tasks = [run_task(i) for i in range(10)]
+    await asyncio.gather(*tasks)
+
+asyncio.run(main())
+```
+
+### 2. 任务队列
+
+```python
+import asyncio
+from browser_use import Browser, sandbox, ChatBrowserUse
+from browser_use.agent.service import Agent
+from asyncio.queue import Queue
+
+async def worker(queue: Queue):
+    @sandbox()
+    async def process(browser: Browser):
+        while not queue.empty():
+            task = await queue.get()
+            agent = Agent(task=task, browser=browser, llm=ChatBrowserUse())
+            await agent.run()
+            queue.task_done()
+
+    await process()
+
+async def main():
+    queue = Queue()
+
+    # 添加任务到队列
+    for i in range(100):
+        await queue.put(f"任务 {i}：执行特定操作")
+
+    # 启动多个工作进程
+    workers = [worker(queue) for _ in range(5)]
+    await asyncio.gather(*workers)
+
+asyncio.run(main())
+```
+
+### 3. 监控和日志
+
+```python
+import asyncio
+from browser_use import Browser, sandbox, ChatBrowserUse
+from browser_use.agent.service import Agent
+import logging
+
+# 配置日志
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+@sandbox()
+async def monitored_task(browser: Browser):
+    agent = Agent(
+        task="你的监控任务",
+        browser=browser,
+        llm=ChatBrowserUse(),
+        save_conversation_path=f"./logs/conversation_{id}.json"
+    )
+
+    history = await agent.run()
+
+    # 记录关键指标
+    logger.info(f"任务完成状态: {history.is_done()}")
+    logger.info(f"执行步数: {history.number_of_steps()}")
+    logger.info(f"总耗时: {history.total_duration_seconds()}秒")
+    logger.info(f"错误数量: {len(history.errors())}")
+
+    return history
+
+asyncio.run(monitored_task())
+```
+
+### 4. 成本控制
+
+```python
+@sandbox(cloud_timeout=15)  # 限制超时时间
+async def cost_controlled_task(browser: Browser):
+    agent = Agent(
+        task="成本敏感的任务",
+        browser=browser,
+        llm=ChatBrowserUse(),
+        max_steps=50,          # 限制最大步数
+        max_failures=1,        # 减少重试次数
+    )
+    history = await agent.run()
+
+    # 计算成本
+    steps = history.number_of_steps()
+    estimated_cost = steps * 0.01  # 估算成本
+
+    print(f"执行步数: {steps}")
+    print(f"预估成本: ${estimated_cost:.4f}")
+
+    return history
+```
+
+## 常见问题
+
+### Q: 本地运行好好的，为什么生产环境失败？
+
+A: 生产环境可能遇到的问题：
+
+1. **网络隔离**：确保能够访问目标网站和 LLM API
+2. **资源限制**：云端环境可能有内存和 CPU 限制
+3. **认证失效**：使用 `cloud_profile_id` 同步认证状态
+4. **反爬虫机制**：使用 `cloud_proxy_country_code` 添加代理
+
+### Q: 如何处理大规模并发？
+
+A: 建议：
+
+1. 使用任务队列管理任务流
+2. 控制并发数量，避免超出系统限制
+3. 实现重试机制处理临时故障
+4. 监控资源使用情况
+
+### Q: 内存使用过高怎么办？
+
+A: 尝试以下方法：
+
+1. 减少 `max_history_items` 参数
+2. 禁用截图功能：`use_vision=False`
+3. 使用无头模式：`headless=True`
+4. 设置合理的超时时间
+
+### Q: 如何保证任务完成？
+
+A: 建议：
+
+1. 设置 `max_failures` > 1 启用重试
+2. 使用 `final_response_after_failure=True` 强制最终响应
+3. 实现任务检查点机制
+4. 记录详细日志便于问题排查
+
+## 相关资源
+
+- [快速开始](./quickstart.mdx)
+- [沙箱快速开始](/customize/sandbox/quickstart)
+- [远程浏览器](/customize/browser/remote-browser)
+- [支持的模型](./supported-models.mdx)
+
+---
+
+**告诉你的计算机要做什么，它就能完成。**

@@ -1,0 +1,104 @@
+---
+title: "事件回调"
+description: "使用回调函数监控执行过程。"
+icon: "bell"
+---
+
+## 概述
+
+通过事件回调，你可以监控代理的执行过程，获取实时状态、日志、结果和错误信息。
+
+## 实时浏览器视图
+
+```python
+@sandbox(on_browser_created=lambda data: print(f'👁️  {data.live_url}'))
+async def task(browser: Browser):
+    agent = Agent(task="你的任务", browser=browser, llm=ChatBrowserUse())
+    await agent.run()
+```
+
+## 所有事件
+
+```python
+from browser_use.sandbox import BrowserCreatedData, LogData, ResultData, ErrorData
+
+@sandbox(
+    on_browser_created=lambda data: print(f'实时地址: {data.live_url}'),
+    on_log=lambda log: print(f'{log.level}: {log.message}'),
+    on_result=lambda result: print('完成！'),
+    on_error=lambda error: print(f'错误: {error.error}'),
+)
+async def task(browser: Browser):
+    # 你的代码
+    pass
+```
+
+所有回调函数可以是同步或异步的。
+
+## 事件类型
+
+### BrowserCreatedData
+
+浏览器创建时触发：
+
+```python
+def on_browser_created(data: BrowserCreatedData):
+    print(f"实时地址: {data.live_url}")
+    print(f"浏览器 ID: {data.browser_id}")
+```
+
+### LogData
+
+日志事件：
+
+```python
+def on_log(log: LogData):
+    print(f"级别: {log.level}")      # debug, info, warning, error
+    print(f"消息: {log.message}")
+    print(f"时间戳: {log.timestamp}")
+```
+
+### ResultData
+
+任务结果：
+
+```python
+def on_result(result: ResultData):
+    print(f"结果: {result.result}")
+    print(f"步骤数: {result.step_count}")
+```
+
+### ErrorData
+
+错误事件：
+
+```python
+def on_error(error: ErrorData):
+    print(f"错误: {error.error}")
+    print(f"步骤: {error.step}")
+```
+
+## 完整示例
+
+```python
+from browser_use import sandbox, Browser, Agent, ChatBrowserUse
+
+@sandbox(
+    on_browser_created=lambda data: print(f'🚀 浏览器已创建: {data.live_url}'),
+    on_log=lambda log: print(f'[{log.level.upper()}] {log.message}'),
+    on_result=lambda result: print(f'✅ 任务完成，耗时 {result.duration} 秒'),
+    on_error=lambda error: print(f'❌ 错误: {error.error}'),
+)
+async def monitored_task(browser: Browser):
+    agent = Agent(
+        task="你的任务",
+        browser=browser,
+        llm=ChatBrowserUse(),
+    )
+    await agent.run()
+```
+
+## 相关资源
+
+- [沙箱快速开始](./quickstart.mdx)
+- [沙箱所有参数](./all-parameters.mdx)

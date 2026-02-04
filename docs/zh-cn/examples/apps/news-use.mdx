@@ -1,0 +1,141 @@
+---
+title: "News-Use（新闻监控器）"
+description: "使用浏览器代理和 Google Gemini 监控新闻网站并提取带有情感分析的文章。"
+icon: "newspaper"
+mode: "wide"
+---
+
+<Note>
+此演示需要 browser-use v0.7.7+。
+</Note>
+
+<video
+  controls
+  className="w-full aspect-video rounded-xl"
+  src="https://browser-use.github.io/media/demos/news_use.mp4">
+</video>
+
+## 功能特性
+
+1. 代理自动访问任何新闻网站
+2. 查找并点击最新的头条文章
+3. 提取标题、URL、发布时间和完整内容
+4. 生成带情感分析的短/长摘要
+5. 跨监控会话的持久去重
+
+## 安装
+
+确保安装了最新版本的 browser-use：
+
+```bash
+uv pip install -U browser-use
+```
+
+从 [Google AI Studio](https://makersuite.google.com/app/apikey) 获取 Gemini API Key：
+
+```bash
+export GOOGLE_API_KEY='your-google-api-key-here'
+```
+
+克隆仓库并进入应用目录：
+
+```bash
+git clone https://github.com/browser-use/browser-use.git
+cd browser-use/examples/apps/news-use
+```
+
+## 使用示例
+
+```bash
+# 一次性提取 - 获取最新文章并退出
+python news_monitor.py --once
+
+# 持续监控 Bloomberg（默认）
+python news_monitor.py
+
+# 每 60 秒监控 TechCrunch
+python news_monitor.py --url https://techcrunch.com --interval 60
+
+# 调试模式 - 查看浏览器操作
+python news_monitor.py --once --debug
+```
+
+## 输出格式
+
+文章按时间戳、情感表情符号和摘要显示：
+
+```
+[2025-09-11 02:49:21] - 🟢 - Klarna 的 IPO 筹集了 14 亿美元，利好现有投资者
+[2025-09-11 02:54:15] - 🔴 - 主要公司继续裁员
+[2025-09-11 02:59:33] - 🟡 - 美联储维持利率不变
+```
+
+**情感指标：**
+- 🟢 **积极** - 好消息、增长、成功故事
+- 🟡 **中性** - 事实报道、公告、更新
+- 🔴 **消极** - 挑战、损失、负面事件
+
+## 数据持久化
+
+所有提取的文章都保存到 `news_data.json`，包含完整元数据：
+
+```json
+{
+  "hash": "a1b2c3d4...",
+  "pulled_at": "2025-09-11T02:49:21Z",
+  "data": {
+    "title": "Klarna 的 IPO 股价上涨，筹集了 14 亿美元",
+    "url": "https://techcrunch.com/2025/09/11/klarna-ipo/",
+    "posting_time": "下午 12:11 · 2025 年 9 月 10 日",
+    "short_summary": "Klarna 的 IPO 筹集了 14 亿美元，利好红杉等现有投资者。",
+    "long_summary": "金融科技公司 Klarna 成功在纽约证券交易所 IPO...",
+    "sentiment": "positive"
+  }
+}
+```
+
+## 程序化使用
+
+```python
+import asyncio
+from news_monitor import extract_latest_article
+
+async def main():
+    # 从任何新闻网站提取最新文章
+    result = await extract_latest_article(
+        site_url="https://techcrunch.com",
+        debug=False
+    )
+    
+    if result["status"] == "success":
+        article = result["data"]
+        print(f"📰 {article['title']}")
+        print(f"😊 情感：{article['sentiment']}")
+        print(f"📝 摘要：{article['short_summary']}")
+
+asyncio.run(main())
+```
+
+## 高级配置
+
+```python
+# 带过滤器的自定义监控
+async def monitor_with_filters():
+    while True:
+        result = await extract_latest_article("https://bloomberg.com")
+        if result["status"] == "success":
+            article = result["data"]
+            # 仅对负面市场新闻发出警报
+            if article["sentiment"] == "negative" and "market" in article["title"].lower():
+                send_alert(article)
+        await asyncio.sleep(300)  # 每 5 分钟检查一次
+
+# 自定义监控间隔
+python news_monitor.py --interval 120  # 每 2 分钟
+```
+
+## 相关资源
+
+- [WhatsApp 发送器](./msg-use.mdx)
+- [广告生成器](./ad-use.mdx)
+- [更多示例](../templates/more-examples.mdx)

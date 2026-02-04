@@ -1,0 +1,124 @@
+---
+title: "项目介绍"
+description: "使用纯文本命令自动化浏览器任务。"
+icon: "book-open"
+---
+
+<img
+  className="block dark:hidden rounded-2xl"
+  src="/images/browser-use-banner.png"
+  alt="Browser Use Logo"
+/>
+<img
+  className="hidden dark:block rounded-2xl"
+  src="/images/browser-use-banner-dark.png"
+  alt="Browser Use Logo"
+/>
+
+## 什么是 Browser Use？
+
+**Browser Use** 是一个开源的 Python 库，它允许大语言模型（LLM）通过 Chrome DevTools Protocol（CDP）控制浏览器，自动执行网页操作任务。只需用自然语言描述你的任务，AI 代理就会理解意图、导航网页、点击元素、输入文本，直到任务完成。
+
+## 核心特性
+
+### 🤖 AI 驱动的自动化
+
+- **智能理解**：代理能够理解复杂的任务描述，自动规划操作步骤
+- **视觉感知**：支持视觉模型，可分析页面截图进行决策
+- **自适应学习**：根据页面变化自动调整策略
+
+### 🌐 广泛的浏览器支持
+
+- **本地 Chromium**：完全控制本地浏览器实例
+- **远程浏览器**：支持连接远程 CDP 兼容的浏览器
+- **云端浏览器**：一键部署到 Browser Use Cloud，享受隐身浏览和代理支持
+
+### 🔧 高度可定制
+
+- **自定义工具**：添加任意功能扩展代理能力
+- **灵活配置**：调整代理行为、超时、内存等参数
+- **多种模型**：支持 OpenAI、Anthropic、Google、AWS Bedrock 等多种 LLM 提供商
+
+### 🚀 生产级部署
+
+- **沙箱隔离**：安全的沙箱环境，防止任务相互干扰
+- **自动扩缩容**：根据负载自动调整资源
+- **会话管理**：支持浏览器配置文件同步和认证保持
+
+## 应用场景
+
+### 数据采集
+
+```python
+task = """
+1. 访问 https://quotes.toscrape.com/
+2. 提取前 10 条名人名言及其作者
+3. 将结果保存为 CSV 文件
+"""
+```
+
+### 表单自动填写
+
+```python
+task = "填写这份工作申请表，使用我的简历和信息。"
+```
+
+### 在线购物
+
+```python
+task = "将这个购物清单中的商品添加到我的购物车。"
+```
+
+### 研究助手
+
+```python
+task = "帮我收集组装一台自定义 PC 所需配件的信息和价格。"
+```
+
+## 支持的模型
+
+| 模型提供商 | 推荐模型 | 特点 |
+|-----------|---------|------|
+| **ChatBrowserUse** | bu-latest / bu-2-0 | 专为浏览器自动化优化，速度最快 |
+| **OpenAI** | o3 / gpt-4o | 通用能力强，生态完善 |
+| **Anthropic** | claude-sonnet-4-0 | 推理能力出色 |
+| **Google** | gemini-flash-latest | 速度快，性价比高 |
+| **AWS Bedrock** | claude-3-5-sonnet | 企业级安全合规 |
+| **Ollama** | llama3.1:8b | 完全本地运行，隐私保护 |
+
+## 快速对比
+
+| 特性 | 本地部署 | 云端部署 |
+|-----|---------|---------|
+| **设置复杂度** | 需要安装 Chromium | 一键开始 |
+| **执行速度** | 取决于本地资源 | 优化的高性能环境 |
+| **隐身能力** | 基础 | 高级隐身，反爬虫优化 |
+| **扩展性** | 受限于本地资源 | 自动扩缩容 |
+| **成本** | 免费（需自备 LLM API） | 按使用付费 |
+
+## 开始使用
+
+<CardGroup cols={2}>
+  <Card title="本地安装" icon="terminal" href="/zh-cn/quickstart">
+     开源 Python 库安装和基本使用。
+  </Card>
+  <Card
+    title="云端快速开始"
+    icon="cloud"
+    href="https://docs.cloud.browser-use.com/zh-cn"
+    color="#FE750E"
+    >
+       使用云端服务快速上手，享受隐身浏览和无限扩展。
+  </Card>
+</CardGroup>
+
+## 相关资源
+
+- 📖 [完整文档](https://docs.browser-use.com/zh-cn)
+- 💻 [GitHub 仓库](https://github.com/browser-use/browser-use)
+- 💬 [Discord 社区](https://link.browser-use.com/discord)
+- 📧 [技术支持](mailto:support@browser-use.com)
+
+---
+
+**告诉你的计算机要做什么，它就能完成。**

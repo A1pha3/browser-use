@@ -1,0 +1,125 @@
+---
+title: "生命周期钩子"
+description: "使用生命周期钩子自定义代理行为。"
+icon: "wrench"
+mode: "wide"
+---
+
+## 概述
+
+Browser-Use 提供生命周期钩子，允许你在代理执行的特定点执行自定义代码。钩子函数可用于在运行时读取和修改代理状态、实现自定义逻辑、更改配置、将代理与外部应用程序集成。
+
+## 可用钩子
+
+目前，Browser-Use 提供以下钩子：
+
+| 钩子 | 说明 | 调用时机 |
+|-----|------|---------|
+| `on_step_start` | 在每个代理步骤开始时执行 | 在代理处理当前状态并决定下一步操作之前 |
+| `on_step_end` | 在每个代理步骤结束时执行 | 在代理执行完当前步骤的所有操作之后、开始下一步之前 |
+
+```python
+await agent.run(on_step_start=..., on_step_end=...)
+```
+
+每个钩子应该是一个 `async` 可调用函数，接受 `agent` 实例作为其唯一参数。
+
+## 基础示例
+
+```python
+import asyncio
+from pathlib import Path
+
+from browser_use import Agent, ChatOpenAI
+from browser_use.browser.events import ScreenshotEvent
+
+
+async def my_step_hook(agent: Agent):
+    # 在钩子内部，你可以访问 Agent 对象下的所有状态和方法：
+    #   agent.settings, agent.state, agent.task
+    #   agent.tools, agent.llm, agent.browser_session
+    #   agent.pause(), agent.resume(), agent.add_new_task(...) 等
+
+    # 你还可以直接访问浏览器状态
+    state = await agent.browser_session.get_browser_state_summary()
+
+    current_url = state.url
+    visit_log = agent.history.urls()
+    previous_url = visit_log[-2] if len(visit_log) >= 2 else None
+    print(f'代理最后在 URL: {previous_url}，现在在 {current_url}')
+    cdp_session = await agent.browser_session.get_or_create_cdp_session()
+
+    # 示例：获取页面 HTML 内容
+    doc = await cdp_session.cdp_client.send.DOM.getDocument(session_id=cdp_session.session_id)
+    html_result = await cdp_session.cdp_client.send.DOM.getOuterHTML(
+        params={'nodeId': doc['root']['nodeId']}, session_id=cdp_session.session_id
+    )
+    page_html = html_result['outerHTML']
+
+    # 示例：使用事件系统截图
+    screenshot_event = agent.browser_session.event_bus.dispatch(ScreenshotEvent(full_page=False))
+    await screenshot_event
+    result = await screenshot_event.event_result(raise_if_any=True, raise_if_none=True)
+
+    # 示例：暂停代理执行并根据某些自定义代码恢复
+    if '/finished' in current_url:
+        agent.pause()
+        Path('result.txt').write_text(page_html)
+        input('已将"完成"页面内容保存到 result.txt，按 [Enter] 恢复...')
+        agent.resume()
+
+
+async def main():
+    agent = Agent(
+        task='搜索关于 AI 的最新新闻',
+        llm=ChatOpenAI(model='gpt-5-mini'),
+    )
+
+    await agent.run(
+        on_step_start=my_step_hook,
+        # on_step_end=...
+        max_steps=10,
+    )
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+## 钩子中可用的数据
+
+使用代理钩子时，你可以访问整个 `Agent` 实例。以下是你可以访问的一些有用数据点：
+
+| 属性 | 说明 |
+|-----|------|
+| `agent.task` | 查看主要任务，`agent.add_new_task(...)` 添加新任务 |
+| `agent.tools` | 访问 `Tools()` 对象和包含可用操作的 `Registry()` |
+| `agent.tools.registry.execute_action('click', {'index': 123}, browser_session=agent.browser_session)` | 执行操作 |
+| `agent.sensitive_data` | 敏感数据字典，可就地更新以添加/删除/修改项目 |
+| `agent.settings` | 传递给 `Agent(...)` 初始化时的所有配置选项 |
+| `agent.llm | 直接访问主 LLM 对象（例如 `ChatOpenAI`） |
+| `agent.state` | 访问大量内部状态，包括代理想法、输出、操作等 |
+| `agent.history` | 访问代理执行的历史数据 |
+| `agent.history.model_thoughts()` | 来自 Browser Use 模型的推理 |
+| `agent.history.model_outputs()` | 来自 Browser Use 模型的原始输出 |
+| `agent.history.model_actions()` | 代理执行的操作 |
+| `agent.history.extracted_content()` | 从网页提取的内容 |
+| `agent.history.urls()` | 代理访问的 URL |
+| `agent.browser_session` | 直接访问 `BrowserSession` 和 CDP 接口 |
+| `agent.browser_session.agent_focus_target_id` | 获取代理当前聚焦的目标 ID |
+| `agent.browser_session.get_or_create_cdp_session()` | 获取当前用于浏览器交互的 CDP 会话 |
+| `agent.browser_session.get_tabs()` | 获取当前打开的所有标签页 |
+| `agent.browser_session.get_current_page_url()` | 获取当前活动标签页的 URL |
+| `agent.browser_session.get_current_page_title()` | 获取当前活动标签页的标题 |
+
+## 使用技巧
+
+- **避免阻塞操作**：由于钩子与代理在同一个执行线程中运行，请保持高效并避免阻塞操作。
+- **改用自定义工具**：钩子是相当高级的功能，大多数功能可以使用[自定义工具](/customize/tools/basics)实现
+- **增加 step_timeout**：如果你的钩子正在做需要很长时间的事情，你可以增加 `Agent(...)` 构造函数中的 `step_timeout` 参数。
+
+## 相关资源
+
+- [自定义工具基础](/customize/tools/basics)
+- [Agent 配置](/customize/agent/all-parameters)
+- [Actor 基础](/customize/actor/basics)

@@ -1,0 +1,117 @@
+---
+title: "Actor 示例"
+description: "Browser Actor 自动化的综合示例，包括表单、JavaScript、鼠标操作和 AI 功能。"
+icon: "code-simple"
+mode: "wide"
+---
+
+## 页面管理
+
+```python
+from browser_use import Browser
+
+browser = Browser()
+await browser.start()
+
+# 创建页面
+page = await browser.new_page()  # 空白标签页
+page = await browser.new_page("https://example.com")  # 带 URL
+
+# 获取所有页面
+pages = await browser.get_pages()
+current = await browser.get_current_page()
+
+# 关闭页面
+await browser.close_page(page)
+await browser.stop()
+```
+
+## 元素查找与交互
+
+```python
+page = await browser.new_page('https://github.com')
+
+# CSS 选择器（即时返回）
+elements = await page.get_elements_by_css_selector("input[type='text']")
+buttons = await page.get_elements_by_css_selector("button.submit")
+
+# 元素操作
+await elements[0].click()
+await elements[0].fill("Hello World")
+await elements[0].hover()
+
+# 页面操作
+await page.press("Enter")
+screenshot = await page.screenshot()
+```
+
+## LLM 驱动功能
+
+```python
+from browser_use.llm.openai.chat import ChatOpenAI
+from pydantic import BaseModel
+
+llm = ChatOpenAI(api_key="your-api-key")
+
+# 使用自然语言查找元素
+button = await page.get_element_by_prompt("登录按钮", llm=llm)
+await button.click()
+
+# 提取结构化数据
+class ProductInfo(BaseModel):
+    name: str
+    price: float
+
+product = await page.extract_content(
+    "提取产品名称和价格",
+    ProductInfo,
+    llm=llm
+)
+```
+
+## JavaScript 执行
+
+```python
+# 简单 JavaScript 评估
+title = await page.evaluate('() => document.title')
+
+# 带参数的 JavaScript
+result = await page.evaluate('(x, y) => x + y', 10, 20)
+
+# 复杂操作
+stats = await page.evaluate('''() => ({
+    url: location.href,
+    links: document.querySelectorAll('a').length
+})''')
+```
+
+## 鼠标操作
+
+```python
+mouse = await page.mouse
+
+# 在坐标处点击
+await mouse.click(x=100, y=200)
+
+# 拖放
+await mouse.down()
+await mouse.move(x=500, y=600)
+await mouse.up()
+
+# 滚动
+await mouse.scroll(x=0, y=100, delta_y=-500)
+```
+
+## 最佳实践
+
+- 在触发导航的操作后使用 `asyncio.sleep()`
+- 检查 URL/标题变化以验证状态转换
+- 交互前始终检查元素是否存在
+- 为不稳定的元素实现重试逻辑
+- 调用 `browser.stop()` 清理资源
+
+## 相关资源
+
+- [Actor 基础](./basics.mdx)
+- [Actor 所有参数](./all-parameters.mdx)
+- [浏览器基础](/customize/browser/basics)

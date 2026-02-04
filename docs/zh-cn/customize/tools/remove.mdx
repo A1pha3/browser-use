@@ -1,0 +1,69 @@
+---
+title: "移除工具"
+description: "你可以排除默认工具。"
+icon: "minus"
+mode: "wide"
+---
+
+## 概述
+
+通过 `exclude_actions` 参数，你可以移除默认工具，防止代理使用某些操作。
+
+## 使用方法
+
+```python
+from browser_use import Tools
+
+tools = Tools(exclude_actions=['search', 'wait'])
+agent = Agent(task='...', llm=llm, tools=tools)
+```
+
+## 可移除的工具
+
+| 工具名称 | 说明 |
+|---------|------|
+| `search` | 搜索查询 |
+| `wait` | 等待指定秒数 |
+| `navigate` | 导航到 URL |
+| `click` | 点击元素 |
+| `input` | 输入文本 |
+| `scroll` | 滚动页面 |
+| `extract` | 提取数据 |
+| `screenshot` | 截图 |
+| `write_file` | 写入文件 |
+| `read_file` | 读取文件 |
+
+## 使用场景
+
+### 1. 限制代理能力
+
+如果你只想让代理执行特定操作：
+
+```python
+# 移除搜索和导航工具，仅允许提取和文件操作
+tools = Tools(exclude_actions=['search', 'navigate', 'go_back'])
+
+agent = Agent(
+    task="从指定页面提取数据并保存",
+    llm=llm,
+    tools=tools,
+)
+```
+
+### 2. 安全限制
+
+移除可能导致意外行为的工具：
+
+```python
+# 移除上传文件工具
+tools = Tools(exclude_actions=['upload_file'])
+
+# 移除写入文件工具（仅允许读取）
+tools = Tools(exclude_actions=['write_file', 'upload_file'])
+```
+
+## 相关资源
+
+- [可用工具列表](./available.mdx)
+- [添加工具](./add.mdx)
+- [工具基础](/customize/tools/basics)

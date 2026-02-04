@@ -1,0 +1,128 @@
+---
+title: "贡献指南"
+description: "了解如何为 Browser Use 项目做出贡献。"
+icon: "handshake"
+mode: "wide"
+---
+
+## 使命
+
+我们的使命是：
+- 让开发者更快乐
+- 执行比人类更多的点击
+- 告诉你的计算机要做什么，它就能完成
+- 使代理更快、更可靠
+
+## 工作内容
+
+这个领域发展迅速。我们每天有 10 个想法。让我们交换一些：
+
+- 浏览我们的 [GitHub Issues](https://github.com/browser-use/browser-use/issues)
+- 查看 [Discord](https://discord.gg/zXJJHtJf3k) 上最活跃的问题
+- 在 [#showcase-your-work](https://discord.com/channels/1303749220842340412/1305549200678850642) 频道获取灵感
+
+## 什么是优秀的 PR？
+
+1. **为什么需要这个 PR？** - 清晰说明更改的目的
+2. **包含演示截图/动图** - 让评审者能够看到效果
+3. **确保 PR 通过所有 CI 测试** - 自动化测试是质量保证
+4. **保持 PR 专注于单一功能** - 避免一次提交过多更改
+
+## 如何贡献
+
+1. **Fork 仓库**
+   ```bash
+   git clone https://github.com/browser-use/browser-use
+   cd browser-use
+   ```
+
+2. **创建功能分支**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+3. **进行更改并测试**
+   - 遵循项目的编码规范
+   - 添加适当的测试
+   - 更新文档（如果需要）
+
+4. **提交 PR**
+   ```bash
+   git add .
+   git commit -m "feat: 添加新功能描述"
+   git push origin feature/your-feature-name
+   ```
+
+## 编码规范
+
+### 代码风格
+
+- 使用 Black 进行代码格式化
+- 使用 Ruff 进行 linting
+- 使用 mypy 进行类型检查
+
+### 文档字符串
+
+使用 Google 风格的文档字符串：
+
+```python
+def example_function(param1: str, param2: int = 10) -> bool:
+    """简要描述函数功能。
+
+    Args:
+        param1: 参数说明
+        param2: 参数说明，默认值为 10
+
+    Returns:
+        返回值说明
+
+    Raises:
+        ValueError: 异常条件说明
+    """
+    pass
+```
+
+### 类型注解
+
+所有公开 API 必须包含类型注解：
+
+```python
+from typing import List, Dict
+
+def process_items(items: List[Dict[str, str]]) -> List[str]:
+    """处理项目列表"""
+    return [item["name"] for item in items]
+```
+
+## 测试
+
+### 编写测试
+
+测试文件应位于 `tests/` 目录下：
+
+```python
+def test_example():
+    """测试示例"""
+    assert True
+```
+
+### 运行测试
+
+```bash
+# 运行所有测试
+./bin/test.sh
+
+# 运行特定测试
+uv pytest tests/test_example.py
+```
+
+## 沟通
+
+我们被 Issues 淹没。如果你需要更快的反馈，请定期在你的 issues/PRs 中添加评论来提醒我们。
+
+## 相关资源
+
+- [本地开发环境搭建](./local-setup.mdx)
+- [GitHub Issues](https://github.com/browser-use/browser-use/issues)
+- [Discord 社区](https://link.browser-use.com/discord)
+- [路线图](../roadmap.mdx)

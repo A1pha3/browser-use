@@ -1,0 +1,134 @@
+---
+title: "沙箱快速开始"
+description: "在云端运行浏览器自动化。"
+icon: "rocket"
+---
+
+## 概述
+
+**沙箱（Sandbox）** 是运行 Browser Use 生产环境部署最简单的方式。我们处理代理、浏览器、持久化、认证、Cookie 和 LLM 的所有细节。
+
+<Note>
+在 [cloud.browser-use.com/new-api-key](https://cloud.browser-use.com/new-api-key) 获取 API Key，新用户可获得 $10 免费额度。
+</Note>
+
+## 基础示例
+
+只需用 `@sandbox()` 装饰器包装你的函数：
+
+```python
+from browser_use import Browser, sandbox, ChatBrowserUse
+from browser_use.agent.service import Agent
+
+@sandbox()
+async def my_task(browser: Browser):
+    agent = Agent(
+        task="查找 Hacker News 排名第一的帖子",
+        browser=browser,
+        llm=ChatBrowserUse()
+    )
+    await agent.run()
+
+# 异步调用
+await my_task()
+```
+
+## 云端参数配置
+
+```python
+@sandbox(
+    cloud_profile_id='your-profile-id',      # 使用保存的 Cookie/认证
+    cloud_proxy_country_code='us',           # 绕过验证码、Cloudflare、地理限制
+    cloud_timeout=60,                        # 最大会话时间（分钟）
+)
+async def task(browser: Browser, url: str):
+    agent = Agent(
+        task=f"访问 {url}",
+        browser=browser,
+        llm=ChatBrowserUse()
+    )
+    await agent.run()
+
+await task(url="https://example.com")
+```
+
+## 参数说明
+
+| 参数 | 说明 | 示例 |
+|-----|------|------|
+| `cloud_profile_id` | 使用云端配置保存的 Cookie 和认证 | `'profile-uuid'` |
+| `cloud_proxy_country_code` | 通过特定国家代理路由，实现隐身效果 | `'us'`、`'jp'` |
+| `cloud_timeout` | 浏览器保持打开的最大时间（分钟） | `30`、`60` |
+
+## 代理国家代码
+
+| 代码 | 国家 |
+|-----|------|
+| us | 美国 |
+| uk | 英国 |
+| fr | 法国 |
+| it | 意大利 |
+| jp | 日本 |
+| au | 澳大利亚 |
+| de | 德国 |
+| fi | 芬兰 |
+| ca | 加拿大 |
+| in | 印度 |
+
+## 沙箱事件
+
+你可以通过事件回调监控代理执行：
+
+```python
+from browser_use import sandbox
+
+@sandbox()
+async def monitored_task(browser: Browser):
+    agent = Agent(
+        task="你的任务",
+        browser=browser,
+        llm=ChatBrowserUse(),
+    )
+
+    # 代理开始执行
+    agent.on("agent_start", lambda data: print(f"开始执行：{data}"))
+
+    # 代理执行操作
+    agent.on("action", lambda data: print(f"执行操作：{data}"))
+
+    # 代理完成
+    agent.on("agent_done", lambda data: print(f"完成：{data}"))
+
+    await agent.run()
+
+await monitored_task()
+```
+
+## 错误处理
+
+```python
+from browser_use import sandbox, BrowserUseError
+
+@sandbox()
+async def robust_task(browser: Browser):
+    try:
+        agent = Agent(
+            task="你的任务",
+            browser=browser,
+            llm=ChatBrowserUse(),
+            max_failures=3,  # 自动重试
+        )
+        history = await agent.run()
+        return history
+    except BrowserUseError as e:
+        print(f"错误：{e}")
+        return None
+
+await robust_task()
+```
+
+## 相关资源
+
+- [生产环境部署](/production)
+- [Agent 配置](/customize/agent/all-parameters)
+- [浏览器配置](/customize/browser/basics)

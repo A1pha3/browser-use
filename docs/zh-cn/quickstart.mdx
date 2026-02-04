@@ -1,0 +1,270 @@
+---
+title: "快速开始"
+description: "安装 Browser Use 并运行你的第一个浏览器自动化任务。"
+icon: "rocket"
+---
+
+## 前置条件
+
+在开始之前，请确保你的系统满足以下要求：
+
+- **Python 版本**：3.11 或更高版本
+- **操作系统**：macOS、Windows、Linux
+- **包管理器**：推荐使用 [uv](https://docs.astral.sh/uv/)，也支持 pip
+
+<Note icon="key" color="#FFC107" iconType="regular">
+`ChatBrowserUse` 提供[最快且最具性价比的模型](https://browser-use.com/posts/speed-matters/)，完成任务的速度比其他模型快 **3-5 倍**。新用户可获得 **$10** 的[免费 LLM 额度](https://cloud.browser-use.com/new-api-key)。
+</Note>
+
+## 第一步：安装 Browser Use
+
+### 1.1 创建 Python 环境
+
+```bash
+# 使用 uv 创建虚拟环境（推荐）
+uv venv --python 3.12
+source .venv/bin/activate
+# Windows 用户使用 `.venv\Scripts\activate`
+```
+
+### 1.2 安装浏览器自动化库
+
+```bash
+# 安装 browser-use 包
+uv pip install browser-use
+
+# 安装 Chromium 浏览器
+uvx browser-use install
+```
+
+## 第二步：配置 API Key
+
+创建一个 `.env` 文件并添加你的 API Key。
+
+```bash
+touch .env
+```
+
+<Info>Windows 系统使用 `echo. > .env`</Info>
+
+根据你选择的 LLM 提供商，添加相应的环境变量：
+
+<CodeGroup>
+  ```bash Browser Use（推荐）
+  # 在 .env 文件中添加
+  BROWSER_USE_API_KEY=
+  # 获取免费额度：https://cloud.browser-use.com/new-api-key
+  ```
+
+  ```bash Google Gemini
+  # 在 .env 文件中添加
+  GOOGLE_API_KEY=
+  # 获取 API Key：https://aistudio.google.com/app/u/1/apikey?pli=1
+  ```
+
+  ```bash OpenAI
+  # 在 .env 文件中添加
+  OPENAI_API_KEY=
+  ```
+
+  ```bash Anthropic
+  # 在 .env 文件中添加
+  ANTHROPIC_API_KEY=
+  ```
+</CodeGroup>
+
+## 第三步：运行你的第一个代理
+
+创建 `example.py` 文件并输入以下代码：
+
+<CodeGroup>
+  ```python Browser Use
+  from browser_use import Agent, ChatBrowserUse
+  from dotenv import load_dotenv
+  import asyncio
+
+  load_dotenv()
+
+  async def main():
+      # 初始化模型（推荐使用 ChatBrowserUse）
+      llm = ChatBrowserUse()
+
+      # 定义任务
+      task = "访问 https://quotes.toscrape.com/，提取第一条名人名言和作者"
+
+      # 创建代理
+      agent = Agent(task=task, llm=llm)
+
+      # 运行代理
+      await agent.run()
+
+  if __name__ == "__main__":
+      asyncio.run(main())
+  ```
+
+  ```python Google Gemini
+  from browser_use import Agent, ChatGoogle
+  from dotenv import load_dotenv
+  import asyncio
+
+  load_dotenv()
+
+  async def main():
+      llm = ChatGoogle(model="gemini-flash-latest")
+      task = "访问 https://quotes.toscrape.com/，提取第一条名人名言和作者"
+      agent = Agent(task=task, llm=llm)
+      await agent.run()
+
+  if __name__ == "__main__":
+      asyncio.run(main())
+  ```
+
+  ```python OpenAI
+  from browser_use import Agent, ChatOpenAI
+  from dotenv import load_dotenv
+  import asyncio
+
+  load_dotenv()
+
+  async def main():
+      llm = ChatOpenAI(model="gpt-4.1-mini")
+      task = "访问 https://quotes.toscrape.com/，提取第一条名人名言和作者"
+      agent = Agent(task=task, llm=llm)
+      await agent.run()
+
+  if __name__ == "__main__":
+      asyncio.run(main())
+  ```
+
+  ```python Anthropic
+  from browser_use import Agent, ChatAnthropic
+  from dotenv import load_dotenv
+  import asyncio
+
+  load_dotenv()
+
+  async def main():
+      llm = ChatAnthropic(model='claude-sonnet-4-0', temperature=0.0)
+      task = "访问 https://quotes.toscrape.com/，提取第一条名人名言和作者"
+      agent = Agent(task=task, llm=llm)
+      await agent.run()
+
+  if __name__ == "__main__":
+      asyncio.run(main())
+  ```
+</CodeGroup>
+
+运行脚本：
+
+```bash
+python example.py
+```
+
+## 第四步：查看结果
+
+代理运行完成后，你会看到以下输出：
+
+- **执行历史**：包含所有操作步骤的详细记录
+- **截图路径**：每个步骤的页面截图
+- **提取内容**：从页面中提取的结构化数据
+
+```python
+# 获取运行结果
+history = await agent.run()
+
+# 查看访问过的 URL
+print(history.urls())
+
+# 查看所有截图路径
+print(history.screenshot_paths())
+
+# 查看提取的内容
+print(history.extracted_content())
+
+# 查看最终结果
+print(history.final_result())
+```
+
+## 下一步
+
+### 自定义浏览器配置
+
+你可以通过 `Browser` 类自定义浏览器的行为：
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+import asyncio
+
+async def main():
+    browser = Browser(
+        headless=False,  # 显示浏览器窗口
+        window_size={'width': 1280, 'height': 720},  # 窗口大小
+        user_data_dir=None,  # 使用临时配置（None 表示无痕模式）
+    )
+
+    llm = ChatBrowserUse()
+    agent = Agent(task="你的任务", llm=llm, browser=browser)
+    await agent.run()
+
+asyncio.run(main())
+```
+
+### 添加自定义工具
+
+扩展代理的功能，添加自定义工具：
+
+```python
+from browser_use import Tools, Agent, ChatBrowserUse
+
+tools = Tools()
+
+@tools.action(description='发送邮件')
+async def send_email(to: str, subject: str, body: str) -> str:
+    # 实现邮件发送逻辑
+    return f"邮件已发送至 {to}"
+
+agent = Agent(
+    task="填写表单后发送确认邮件",
+    llm=ChatBrowserUse(),
+    tools=tools,
+)
+```
+
+### 生产环境部署
+
+查看[生产环境部署指南](./production.mdx)，了解如何大规模运行 Browser Use。
+
+## 常见问题
+
+### Q: 代理运行失败怎么办？
+
+A: 请检查以下几点：
+
+1. **API Key 是否正确配置**：确保 `.env` 文件中的 API Key 有效
+2. **Chromium 是否已安装**：运行 `uvx browser-use install`
+3. **网络连接**：确保能够访问目标网站和 LLM 服务
+4. **增加重试次数**：`Agent` 的 `max_failures` 参数可以设置重试次数
+
+### Q: 如何提高任务成功率？
+
+A: 建议尝试以下方法：
+
+1. **使用更强大的模型**：如 `ChatBrowserUse` 或 `o3`
+2. **增加步骤限制**：`max_steps` 参数可以设置最大步数
+3. **添加初始操作**：`initial_actions` 可以预设一些操作
+4. **使用视觉模式**：`use_vision=True` 让代理分析页面截图
+
+### Q: 如何处理验证码？
+
+A: 本地运行很难绕过验证码。建议使用：
+
+1. **Browser Use Cloud**：提供隐身浏览器，可自动绕过大多数验证码
+2. **代理配置**：使用高质量代理 IP
+3. **手动干预**：在遇到验证码时暂停任务，人工完成验证
+
+## 相关资源
+
+- [支持的模型](./supported-models.mdx)
+- [自定义浏览器配置](/customize/browser/basics)
+- [自定义工具](/customize/tools/basics)
+- [生产环境部署](./production.mdx)

@@ -1,0 +1,251 @@
+---
+title: "工具基础"
+description: "工具是代理与外部世界交互的函数。"
+icon: "wrench"
+mode: "wide"
+---
+
+## 概述
+
+**工具（Tools）** 是扩展代理能力的自定义函数。通过添加工具，你可以让代理执行任意操作，如调用 API、发送邮件、读取数据库等。
+
+## 快速示例
+
+```python
+from browser_use import Tools, ActionResult, BrowserSession, Agent
+
+# 创建工具注册表
+tools = Tools()
+
+# 定义自定义工具
+@tools.action('向人类提问')
+async def ask_human(question: str, browser_session: BrowserSession) -> ActionResult:
+    # 获取用户输入
+    answer = input(f'{question} > ')
+    return ActionResult(extracted_content=f'人类的回答：{answer}')
+
+# 在代理中使用
+agent = Agent(
+    task='向人类寻求帮助',
+    llm=ChatBrowserUse(),
+    tools=tools,
+)
+```
+
+## ActionResult
+
+`ActionResult` 是工具返回结果的包装类：
+
+```python
+from browser_use import ActionResult
+
+# 简单返回
+return ActionResult(extracted_content="结果内容")
+
+# 带状态返回
+return ActionResult(
+    extracted_content="提取的内容",
+    long_term_memory="长期记忆信息",
+    error="错误信息（如果有）",
+    is_done=False,        # 任务是否完成
+    success=True,         # 操作是否成功
+    attachments=["file.pdf"],  # 附件列表
+)
+```
+
+## 工具装饰器
+
+### 基础用法
+
+```python
+@tools.action('工具描述')
+async def my_tool(param: str) -> str:
+    # 工具逻辑
+    return f"结果：{param}"
+```
+
+### 带参数的描述
+
+```python
+@tools.action(
+    description='发送确认邮件',
+    allowed_domains=['example.com'],  # 限制可使用的域名
+)
+async def send_email(to: str, subject: str, body: str) -> str:
+    # 邮件发送逻辑
+    return f"邮件已发送至 {to}"
+```
+
+## 浏览器会话访问
+
+要访问浏览器进行确定性操作，使用 `browser_session` 参数：
+
+```python
+from browser_use import Tools, ActionResult, BrowserSession
+
+tools = Tools()
+
+@tools.action('点击特定元素')
+async def click_element(
+    index: int,
+    browser_session: BrowserSession
+) -> ActionResult:
+    # 直接操作浏览器
+    await browser_session.click(index=index)
+    return ActionResult(extracted_content=f"点击了元素 {index}")
+```
+
+<Warning>
+**重要**：参数名称必须完全匹配 `browser_session`，类型为 `BrowserSession`。代理通过参数名称注入依赖，使用错误的名称会导致工具静默失败。
+</Warning>
+
+## 常用工具示例
+
+### 发送邮件
+
+```python
+@tools.action('发送确认邮件')
+async def send_email(
+    to: str,
+    subject: str,
+    body: str,
+    browser_session: BrowserSession = None
+) -> ActionResult:
+    # 邮件发送逻辑
+    return ActionResult(extracted_content=f"邮件已发送：{subject}")
+```
+
+### 获取验证码
+
+```python
+@tools.action('从验证器获取验证码')
+async def get_2fa_code(
+    service: str,
+    account: str
+) -> ActionResult:
+    # 从 TOTP 应用获取验证码
+    code = get_totp_code(service, account)
+    return ActionResult(extracted_content=f"验证码：{code}")
+```
+
+### 读取文件
+
+```python
+@tools.action('读取配置文件')
+async def read_config(path: str) -> ActionResult:
+    with open(path, 'r') as f:
+        content = f.read()
+    return ActionResult(extracted_content=content)
+```
+
+### API 调用
+
+```python
+import httpx
+
+@tools.action('调用 REST API')
+async def call_api(
+    method: str,
+    url: str,
+    data: dict = None
+) -> ActionResult:
+    async with httpx.AsyncClient() as client:
+        response = await client.request(method, url, json=data)
+    return ActionResult(
+        extracted_content=response.text,
+        success=response.status_code < 400
+    )
+```
+
+### 数据库查询
+
+```python
+@tools.action('查询用户信息')
+async def query_user(user_id: int) -> ActionResult:
+    result = db.query("SELECT * FROM users WHERE id = ?", user_id)
+    return ActionResult(extracted_content=str(result))
+```
+
+## 移除默认工具
+
+你可以通过 `exclude_actions` 参数移除默认工具：
+
+```python
+from browser_use import Tools
+
+# 移除搜索和等待工具
+tools = Tools(exclude_actions=['search', 'wait'])
+
+# 现在代理无法使用这些工具
+```
+
+## 工具返回类型
+
+### 字符串返回
+
+```python
+@tools.action('简单工具')
+def simple_tool() -> str:
+    return "任务完成"
+```
+
+### ActionResult 返回
+
+```python
+@tools.action('高级工具')
+def advanced_tool() -> ActionResult:
+    return ActionResult(
+        extracted_content="主结果",
+        long_term_memory="需要记住的信息",
+        error=None,
+        is_done=False,
+        success=True,
+    )
+```
+
+## 完整示例
+
+```python
+from browser_use import Tools, ActionResult, BrowserSession, Agent, ChatBrowserUse
+
+# 创建工具
+tools = Tools()
+
+@tools.action('Ask human for help')
+async def ask_human(question: str) -> ActionResult:
+    answer = input(f'{question} > ')
+    return ActionResult(extracted_content=f'人类回答：{answer}')
+
+@tools.action('发送邮件')
+async def send_email(
+    to: str,
+    subject: str,
+    body: str
+) -> ActionResult:
+    # 发送逻辑
+    return ActionResult(extracted_content=f'邮件已发送至 {to}')
+
+@tools.action('执行计算')
+async def calculate(expression: str) -> ActionResult:
+    result = eval(expression)
+    return ActionResult(extracted_content=f"{expression} = {result}")
+
+# 创建代理
+agent = Agent(
+    task="""1. 向人类询问要计算什么
+            2. 执行计算
+            3. 发送结果邮件""",
+    llm=ChatBrowserUse(),
+    tools=tools,
+)
+
+async def main():
+    await agent.run()
+```
+
+## 相关资源
+
+- [可用工具列表](/customize/tools/available)
+- [添加自定义工具](/customize/tools/add)
+- [移除工具](/customize/tools/remove)
+- [工具响应格式](/customize/tools/response)
