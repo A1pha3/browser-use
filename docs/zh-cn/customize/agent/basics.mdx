@@ -5,9 +5,75 @@ icon: "bot"
 mode: "wide"
 ---
 
-## 概述
+<div className="mb-8">
+  <span className="text-sm px-3 py-1 bg-green-100 text-green-800 rounded-full mr-2">⭐⭐ 基础级</span>
+  <span className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-full">预计阅读: 30分钟</span>
+  <span className="text-sm px-3 py-1 bg-purple-100 text-purple-800 rounded-full">Python 异步编程</span>
+</div>
 
-`Agent` 是 Browser Use 的核心组件，负责接收任务、规划操作步骤并执行浏览器操作。本节介绍如何创建和配置 Agent。
+## 学习目标
+
+完成本文档学习后，你将能够：
+
+| 目标层级 | 描述 | 检验标准 |
+|---------|------|---------|
+| **记忆** | 说出 Agent 的核心参数和配置项 | 能列举 10+ Agent 参数 |
+| **理解** | 解释 Agent 执行流程和各组件关系 | 能画出 Agent 工作流程图 |
+| **应用** | 创建和配置满足需求的 Agent 实例 | 能独立完成自定义 Agent 配置 |
+
+## 核心概念
+
+`Agent` 是 Browser Use 的核心组件，负责接收任务、规划操作步骤并执行浏览器操作。
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Agent 核心架构                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │                    Agent                             │   │
+│   │   ├── task（任务描述）                              │   │
+│   │   ├── llm（大语言模型）                             │   │
+│   │   ├── browser（浏览器实例）                         │   │
+│   │   └── tools（工具注册表）                           │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                          ↓                                   │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │              Agent 执行循环                          │   │
+│   │   1. 捕获页面状态（HTML + 截图）                    │   │
+│   │   2. 发送给 LLM 分析                               │   │
+│   │   3. LLM 返回下一个动作                            │   │
+│   │   4. 执行动作并验证结果                            │   │
+│   │   5. 重复直到任务完成或达到最大步数                  │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                          ↓                                   │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │              返回 AgentHistoryList                   │   │
+│   │   • 执行历史 • 截图 • 提取内容 • 错误信息            │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Agent 与其他组件的关系
+
+```python
+from browser_use import Agent, Browser, Tools, ChatBrowserUse
+
+# Browser 管理浏览器实例
+browser = Browser(headless=False)
+
+# Tools 管理可用工具
+tools = Tools()
+
+# Agent 协调所有组件
+agent = Agent(
+    task="搜索最新的 AI 新闻",
+    llm=ChatBrowserUse(),  # 大脑
+    browser=browser,       # 执行器
+    tools=tools,          # 工具箱
+)
+```
 
 ## 基础用法
 
@@ -100,6 +166,26 @@ print(history.number_of_steps())           # 执行步数
 print(history.total_duration_seconds())   # 总耗时（秒）
 ```
 
+### History 数据结构心智模型
+
+```
+AgentHistoryList
+├── 执行历史
+│   ├── urls()           → [url1, url2, ...]
+│   ├── screenshot_paths() → [path1, path2, ...]
+│   ├── action_names()   → ['click', 'input', 'scroll', ...]
+│   └── extracted_content() → [content1, content2, ...]
+│
+├── 状态判断
+│   ├── is_done()        → 任务是否完成
+│   ├── is_successful()  → 是否成功（未超步数）
+│   └── has_errors()     → 是否有错误
+│
+└── 结果
+    ├── final_result()   → 最终结果
+    └── number_of_steps() → 执行步数
+```
+
 ## 常用配置
 
 ### vision（视觉模式）
@@ -110,7 +196,7 @@ agent = Agent(
     llm=ChatBrowserUse(),
     use_vision="auto",  # auto（默认）- 需要时使用截图
     # use_vision=True,   # 始终包含截图
-    # use_vision=False,  # 从不包含截图
+    # use_vision=False,  # 从不包含截图（仅文本）
 )
 ```
 
@@ -137,6 +223,10 @@ agent = Agent(
 )
 ```
 
+<Note icon="key" color="#FFC107" iconType="regular">
+**优化建议**：对于简单的页面提取任务，使用轻量级模型（如 gpt-4o-mini）可以显著降低成本。
+</Note>
+
 ## 执行控制
 
 ```python
@@ -145,13 +235,32 @@ agent = Agent(
     llm=ChatBrowserUse(),
 
     max_steps=100,           # 最大执行步数
-    max_actions_per_step=3,  # 每步最大操作数
+    max_actions_per_step=3,  # 每步最大操作数（表单填写时可合并多个输入）
     max_failures=3,          # 最大失败重试次数
     final_response_after_failure=True,  # 失败后尝试最终响应
 
     # 快速模式
     flash_mode=False,  # 跳过评估和思考过程，更快
 )
+```
+
+### 执行控制心智模型
+
+```
+任务执行流程
+
+开始
+  ↓
+重复直到完成或达到最大步数
+  ├─ 捕获页面状态
+  ├─ LLM 决策下一步
+  ├─ 执行操作（最多 max_actions_per_step 个）
+  ├─ 检查结果
+  └─ 失败？ → 重试（最多 max_failures 次）
+    ↓
+任务完成 / 达到最大步数 / 重试用尽
+  ↓
+返回执行历史
 ```
 
 ## 系统提示词
@@ -183,6 +292,10 @@ agent = Agent(
     """,
 )
 ```
+
+<Warning>
+**注意**：`override_system_message` 会完全替换默认提示词，可能影响 Agent 的基本能力。谨慎使用。
+</Warning>
 
 ## 初始操作
 
@@ -251,6 +364,10 @@ agent = Agent(
     max_history_items=None,  # 保留的历史步骤数，None 表示全部保留
 )
 ```
+
+<Note>
+对于长任务，限制 `max_history_items` 可以减少 Token 消耗，但可能影响 Agent 的上下文理解能力。
+</Note>
 
 ## 直接打开 URL
 
@@ -331,8 +448,121 @@ async def main():
     history = await agent.run()
 ```
 
+## 实践练习
+
+### 练习 1：创建第一个 Agent（⭐⭐）
+
+```python
+from browser_use import Agent, ChatBrowserUse
+
+agent = Agent(
+    task="访问 https://example.com，提取页面标题",
+    llm=ChatBrowserUse(),
+)
+```
+
+**练习目标**：运行 Agent，理解执行流程。
+
+### 练习 2：配置执行控制（⭐⭐⭐）
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+
+browser = Browser(headless=False)
+
+agent = Agent(
+    task="复杂的多步骤任务",
+    llm=ChatBrowserUse(),
+    browser=browser,
+    max_steps=50,              # 限制最大步数
+    max_actions_per_step=3,    # 每步可执行多个操作
+    max_failures=5,            # 允许更多重试
+    step_timeout=180,          # 每步超时 3 分钟
+)
+```
+
+**练习目标**：配置适合复杂任务的参数。
+
+### 练习 3：保存和分析执行历史（⭐⭐⭐）
+
+```python
+from browser_use import Agent, ChatBrowserUse
+
+agent = Agent(
+    task="数据采集任务",
+    llm=ChatBrowserUse(),
+    save_conversation_path='./history.json',
+    calculate_cost=True,
+)
+
+history = await agent.run()
+
+# 分析结果
+print(f"执行步数: {history.number_of_steps()}")
+print(f"总耗时: {history.total_duration_seconds()}秒")
+print(f"访问的 URL: {history.urls()}")
+print(f"提取的内容: {history.extracted_content()}")
+print(f"最终结果: {history.final_result()}")
+```
+
+## 常见问题
+
+### Q: Agent 运行太慢怎么办？
+
+**A**: 尝试以下优化：
+
+1. **启用快速模式**：`flash_mode=True`
+2. **减少视觉详细程度**：`vision_detail_level="low"`
+3. **限制历史记录**：`max_history_items=10`
+4. **使用更快的模型**：如 `ChatBrowserUse` 或 `gemini-flash-latest`
+
+### Q: 任务中途失败怎么办？
+
+**A**: 增加重试次数和超时时间：
+
+```python
+agent = Agent(
+    task="...",
+    llm=ChatBrowserUse(),
+    max_failures=5,
+    final_response_after_failure=True,
+    step_timeout=180,
+)
+```
+
+### Q: 如何提高任务成功率？
+
+**A**: 建议：
+
+1. **任务描述要具体**：避免模糊的指令
+2. **使用视觉模式**：`use_vision=True`
+3. **增加步骤限制**：`max_steps` 设置足够大
+4. **添加验证步骤**：在关键操作后检查结果
+
+### Q: Agent 不按预期执行怎么办？
+
+**A**:
+
+1. **检查任务描述**：是否足够清晰和具体
+2. **添加系统提示**：使用 `extend_system_message` 添加规则
+3. **使用初始操作**：`initial_actions` 预设初始状态
+4. **查看执行历史**：分析 Agent 的决策过程
+
 ## 相关资源
 
 - [所有 Agent 参数](/customize/agent/all-parameters)
 - [工具配置](/customize/tools/basics)
 - [浏览器配置](/customize/browser/basics)
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+
+**⭐ 学习检查**：完成本节后，你应该能：
+
+- [ ] 说出 Agent 的核心参数和配置项
+- [ ] 解释 Agent 执行流程和各组件关系
+- [ ] 创建和配置满足需求的 Agent 实例
+- [ ] 理解如何分析和利用执行历史
+
+</div>

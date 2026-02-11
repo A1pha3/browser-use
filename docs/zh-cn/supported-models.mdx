@@ -4,20 +4,59 @@ description: "选择你喜欢的 LLM 提供商。"
 icon: "microchip-ai"
 ---
 
-## 概述
+<div className="mb-8">
+  <span className="text-sm px-3 py-1 bg-green-100 text-green-800 rounded-full mr-2">⭐⭐ 基础级</span>
+  <span className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-full">预计阅读: 20分钟</span>
+</div>
 
-Browser Use 支持多种大语言模型（LLM）提供商，包括 OpenAI、Anthropic、Google、AWS Bedrock 等。你可以根据需求选择最适合的模型。
+## 学习目标
 
-## 模型对比
+完成本文档学习后，你将能够：
 
-| 模型 | 推荐场景 | 速度 | 准确性 | 成本 |
-|-----|---------|-----|-------|-----|
-| **ChatBrowserUse** | 浏览器自动化专用 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 中等 |
-| **OpenAI o3** | 复杂推理任务 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 较高 |
-| **Anthropic Claude** | 长上下文理解 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 较高 |
-| **Google Gemini** | 多模态任务 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 低 |
-| **AWS Bedrock** | 企业合规需求 | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 按需付费 |
-| **Ollama（本地）** | 隐私保护 | ⭐⭐⭐ | ⭐⭐⭐ | 免费 |
+| 目标层级 | 描述 | 检验标准 |
+|---------|------|---------|
+| **记忆** | 列出 Browser Use 支持的主要模型提供商 | 能说出 5+ 个支持的模型 |
+| **理解** | 解释不同模型在速度和准确性上的差异 | 能根据需求推荐合适的模型 |
+| **应用** | 配置不同模型并理解其适用场景 | 能独立完成模型切换和配置 |
+
+## 模型选择决策框架
+
+选择合适的模型是使用 Browser Use 的关键决策之一。以下是决策框架：
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    模型选择决策树                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   首要考虑因素                                                │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │ 1. 你的首要优先级是什么？                             │   │
+│   │    ├─ 速度      → ChatBrowserUse / Gemini Flash    │   │
+│   │    ├─ 准确性    → OpenAI o3 / Claude 3.5            │   │
+│   │    └─ 成本      → Ollama / Gemini Flash             │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                                                              │
+│   次要考虑因素                                                │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │ 2. 部署环境是什么？                                   │   │
+│   │    ├─ 本地隐私  → Ollama（本地部署）                  │   │
+│   │    ├─ 企业合规  → AWS Bedrock / Azure OpenAI         │   │
+│   │    └─ 快速原型  → ChatBrowserUse / OpenAI            │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 模型对比总览
+
+| 模型 | 推荐场景 | 速度 | 准确性 | 成本 | 难度 |
+|-----|---------|-----|-------|------|------|
+| **ChatBrowserUse** | 浏览器自动化专用 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 中等 | ⭐ |
+| **OpenAI o3** | 复杂推理任务 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 较高 | ⭐ |
+| **Anthropic Claude** | 长上下文理解 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 较高 | ⭐ |
+| **Google Gemini** | 多模态任务 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 低 | ⭐ |
+| **AWS Bedrock** | 企业合规需求 | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 按需付费 | ⭐⭐ |
+| **Ollama（本地）** | 隐私保护 | ⭐⭐⭐ | ⭐⭐⭐ | 免费 | ⭐⭐ |
 
 ## ChatBrowserUse（推荐）
 
@@ -41,6 +80,26 @@ agent = Agent(
 )
 ```
 
+### 为什么推荐 ChatBrowserUse？
+
+<AccordionGroup>
+  <Accordion title="专为浏览器自动化优化">
+    - 针对浏览器交互场景训练，理解页面结构、点击目标、输入字段
+    - 对话历史优化，减少重复理解的开销
+    - 针对常见网页模式有更好的识别能力
+  </Accordion>
+  <Accordion title="速度优势">
+    - 平均任务完成时间比其他模型快 3-5 倍
+    - 更少的 token 消耗
+    - 更快的响应时间
+  </Accordion>
+  <Accordion title="准确性保证">
+    - 在浏览器自动化基准测试中表现最佳
+    - 更好的页面状态理解
+    - 更少的错误重试
+  </Accordion>
+</AccordionGroup>
+
 ### 环境变量
 
 ```bash .env
@@ -51,10 +110,10 @@ BROWSER_USE_API_KEY=
 
 ### 可用模型
 
-| 模型名称 | 类型 | 特点 |
-|---------|------|------|
-| `bu-latest` / `bu-1-0` | 默认模型 | 性价比高，适合大多数任务 |
-| `bu-2-0` | 高级模型 | 能力更强，适合复杂任务 |
+| 模型名称 | 类型 | 特点 | 推荐场景 |
+|---------|------|------|---------|
+| `bu-latest` / `bu-1-0` | 默认模型 | 性价比高，适合大多数任务 | 一般浏览器自动化 |
+| `bu-2-0` | 高级模型 | 能力更强，适合复杂任务 | 需要深度理解的复杂任务 |
 
 ### 价格（每百万 Token）
 
@@ -95,6 +154,15 @@ agent = Agent(
 )
 ```
 
+### OpenAI 模型选择
+
+| 模型 | 特点 | 适用场景 |
+|-----|------|---------|
+| `o3` | 最佳推理能力，最新模型 | 复杂任务、需要深度思考 |
+| `gpt-4o` | 平衡型模型 | 日常浏览器自动化 |
+| `gpt-4o-mini` | 性价比高 | 简单任务、成本敏感 |
+| `gpt-4.1-mini` | 新版性价比款 | 简单到中等任务 |
+
 ### 环境变量
 
 ```bash .env
@@ -105,9 +173,21 @@ OPENAI_API_KEY=
 你可以通过传入自定义 URL（或其他参数）来使用任何 OpenAI 兼容的模型。
 </Info>
 
+### 成本估算示例
+
+```
+假设每次任务消耗 5000 input tokens + 2000 output tokens：
+
+gpt-4o-mini: 约 $0.00002/次
+gpt-4o:      约 $0.0005/次
+o3:         约 $0.005/次
+```
+
 ## Anthropic Claude
 
 [示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/claude-4-sonnet.py)
+
+Claude 在长上下文理解和推理方面表现出色。
 
 ```python
 from browser_use import Agent, ChatAnthropic
@@ -124,6 +204,14 @@ agent = Agent(
 )
 ```
 
+### Claude 模型选择
+
+| 模型 | 特点 | 适用场景 |
+|-----|------|---------|
+| `claude-sonnet-4-0` | 平衡型 | 日常自动化 |
+| `claude-opus-4-0` | 最佳推理 | 复杂任务 |
+| `claude-haiku-4-0` | 快速响应 | 简单任务 |
+
 ### 环境变量
 
 ```bash .env
@@ -137,6 +225,8 @@ ANTHROPIC_API_KEY=
 <Warning>
 `GEMINI_API_KEY` 已弃用，应使用 `GOOGLE_API_KEY`。
 </Warning>
+
+Gemini Flash 提供出色的性价比。
 
 ```python
 from browser_use import Agent, ChatGoogle
@@ -155,6 +245,13 @@ agent = Agent(
 )
 ```
 
+### Gemini 模型选择
+
+| 模型 | 特点 | 适用场景 |
+|-----|------|---------|
+| `gemini-flash-latest` | 快速响应 | 快速原型开发 |
+| `gemini-pro-latest` | 平衡型 | 一般任务 |
+
 ### 环境变量
 
 ```bash .env
@@ -167,7 +264,7 @@ GOOGLE_API_KEY=
 
 [示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/aws.py)
 
-AWS Bedrock 通过单一 API 提供对多种模型提供商的访问。
+AWS Bedrock 通过单一 API 提供对多种模型提供商的访问，适合企业环境。
 
 ### 通用 Bedrock 客户端（支持所有提供商）
 
@@ -225,6 +322,8 @@ AWS_DEFAULT_REGION=us-east-1
 ## Azure OpenAI
 
 [示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/azure_openai.py)
+
+适用于已经在使用 Azure 平台的企业。
 
 ```python
 from browser_use import Agent, ChatAzureOpenAI
@@ -290,6 +389,8 @@ agent = Agent(
 
 [示例代码](https://github.com/browser-use/browser-use/blob/main/examples/models/llama4-groq.py)
 
+Groq 提供高速推理服务。
+
 ```python
 from browser_use import Agent, ChatGroq
 
@@ -325,11 +426,25 @@ llm = ChatOllama(model="llama3.1:8b")
 
 ### 推荐模型
 
-| 模型 | 大小 | 特点 |
-|-----|------|------|
-| llama3.1:8b | ~4.9 GB | 性价比高，适合大多数任务 |
-| llama3.1:70b | ~39 GB | 能力更强，需要更多资源 |
-| qwen2.5:7b | ~4.5 GB | 中文支持好 |
+| 模型 | 大小 | VRAM | 特点 |
+|-----|------|------|------|
+| llama3.1:8b | ~4.9 GB | ~6 GB | 性价比高，适合大多数任务 |
+| llama3.1:70b | ~39 GB | ~48 GB | 能力更强，需要更多资源 |
+| qwen2.5:7b | ~4.5 GB | ~6 GB | 中文支持好 |
+| deepseek-r1:14b | ~14 GB | ~18 GB | 推理能力强 |
+
+### Ollama 适用场景
+
+**适合使用 Ollama 的情况**：
+- 数据隐私敏感，不能将数据发送到外部 API
+- 需要大量调用模型，成本考虑
+- 网络不稳定，需要离线运行
+- 开发测试阶段，快速迭代
+
+**不适合使用 Ollama 的情况**：
+- 需要最高准确性
+- 网络稳定，成本不是问题
+- 需要使用不支持本地运行的模型
 
 ## 其他兼容 OpenAI API 的模型
 
@@ -416,19 +531,83 @@ agent = Agent(task="你的任务", llm=llm)
 2. **Azure OpenAI** - 合规认证
 3. **私有化部署 Ollama** - 完全本地化
 
+## 实践练习
+
+### 练习 1：模型对比测试（⭐⭐）
+
+创建测试脚本，对比不同模型的执行效果：
+
+```python
+import asyncio
+from browser_use import Agent
+from browser_use.models import ChatBrowserUse, ChatOpenAI, ChatGoogle
+
+async def compare_models(task):
+    models = {
+        "ChatBrowserUse": ChatBrowserUse(),
+        "OpenAI GPT-4o": ChatOpenAI(model="gpt-4o"),
+        "Google Gemini": ChatGoogle(model="gemini-flash-latest"),
+    }
+
+    results = {}
+    for name, llm in models.items():
+        agent = Agent(task=task, llm=llm)
+        history = await agent.run()
+        results[name] = {
+            "steps": history.number_of_steps(),
+            "success": history.is_done(),
+        }
+        print(f"{name}: {results[name]}")
+
+    return results
+
+# 运行对比
+asyncio.run(compare_models("访问 example.com，提取标题"))
+```
+
+### 练习 2：选择最适合的模型（⭐⭐⭐）
+
+根据以下场景，选择最合适的模型：
+
+| 场景 | 推荐模型 | 说明 |
+|-----|---------|------|
+| 快速原型开发 | Gemini Flash | 速度快，成本低 |
+| 高准确性需求（银行系统） | Claude 3.5 / o3 | 企业级可靠性 |
+| 隐私敏感数据处理 | Ollama（本地） | 数据不出本地 |
+| 大规模批量任务 | ChatBrowserUse | 性价比高 |
+| 需要长上下文理解 | Claude 3.5 | 100K+ context window |
+
+### 练习 3：成本优化策略（⭐⭐⭐）
+
+**心智模型：成本-质量权衡**
+
+```
+低成本 → 高成本
+  ↓
+Ollama → Gemini → ChatBrowserUse → Claude/GPT-4o
+  ↓                              ↓
+简单任务                      复杂任务
+```
+
+**优化建议**：
+1. **任务分级**：简单任务用便宜模型，复杂任务用高级模型
+2. **缓存利用**：ChatBrowserUse 的缓存 token 成本仅为正常的 1/10
+3. **批量处理**：减少频繁的小任务调用
+4. **结果验证**：用便宜模型做初筛，贵模型做最终确认
+
 ## 常见问题
 
 ### Q: 哪个模型最适合浏览器自动化？
 
-A: **ChatBrowserUse** 是专门为浏览器自动化任务优化的模型，在准确性和速度之间取得了最佳平衡。平均完成任务的速度比其他模型快 3-5 倍。
+**A**: **ChatBrowserUse** 是专门为浏览器自动化任务优化的模型，在准确性和速度之间取得了最佳平衡。平均完成任务的速度比其他模型快 3-5 倍。
 
 ### Q: 可以使用本地模型吗？
 
-A: 可以。使用 **Ollama** 可以在本地运行模型，完全保护数据隐私。推荐使用 llama3.1:8b 或更大的模型。
+**A**: 可以。使用 **Ollama** 可以在本地运行模型，完全保护数据隐私。推荐使用 llama3.1:8b 或更大的模型。
 
 ### Q: 如何切换不同的模型？
 
-A: 只需更改 LLM 初始化代码：
+**A**: 只需更改 LLM 初始化代码：
 
 ```python
 # 使用 ChatBrowserUse
@@ -443,15 +622,36 @@ llm = ChatAnthropic(model="claude-sonnet-4-0")
 
 ### Q: 模型调用失败怎么办？
 
-A: 检查以下几点：
+**A**: 检查以下几点：
 
 1. **API Key 是否正确**：确保环境变量设置正确
 2. **余额是否充足**：检查 API 提供商的账户余额
 3. **网络连接**：确保能够访问 API 端点
 4. **模型是否可用**：确认模型名称和版本正确
 
+### Q: 为什么同一个任务在不同模型上表现不同？
+
+**A**: 不同模型的训练方式和能力侧重不同：
+
+- **推理能力**：o3 > Claude 3.5 > GPT-4o > Gemini
+- **速度**：Gemini Flash > ChatBrowserUse > Groq > Claude
+- **成本**：Ollama > Gemini > ChatBrowserUse > Claude/o3
+
 ## 相关资源
 
 - [快速开始](./quickstart.mdx)
 - [Agent 配置参数](/customize/agent/all-parameters)
 - [生产环境部署](./production.mdx)
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+
+**⭐ 学习检查**：完成本节后，你应该能：
+
+- [ ] 说出 Browser Use 支持的主要模型提供商
+- [ ] 根据需求选择合适的模型
+- [ ] 独立完成模型配置和切换
+- [ ] 理解不同模型在成本和性能上的权衡
+
+</div>

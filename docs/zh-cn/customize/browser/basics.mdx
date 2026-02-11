@@ -4,9 +4,70 @@ description: "学习如何配置和管理浏览器实例。"
 icon: "globe"
 ---
 
-## 概述
+<div className="mb-8">
+  <span className="text-sm px-3 py-1 bg-green-100 text-green-800 rounded-full mr-2">⭐⭐ 基础级</span>
+  <span className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-full">预计阅读: 25分钟</span>
+  <span className="text-sm px-3 py-1 bg-purple-100 text-purple-800 rounded-full">Python 异步编程</span>
+</div>
 
-`Browser` 类用于配置和管理浏览器实例。通过调整各种参数，你可以控制浏览器的行为、外观和功能。
+## 学习目标
+
+完成本文档学习后，你将能够：
+
+| 目标层级 | 描述 | 检验标准 |
+|---------|------|---------|
+| **记忆** | 说出 Browser 类的主要配置参数 | 能列举 10+ 配置参数 |
+| **理解** | 解释不同显示模式和使用场景 | 能根据场景选择合适的模式 |
+| **应用** | 配置满足特定需求的浏览器实例 | 能独立完成自定义配置 |
+
+## 核心概念
+
+`Browser` 类是 Browser Use 的核心组件之一，负责管理浏览器实例的生命周期。
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Browser 架构                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │                    Browser                           │   │
+│   │   ├── 显示模式（headless/full）                      │   │
+│   │   ├── 窗口配置（size, position, viewport）           │   │
+│   │   ├── 用户数据（profiles, cookies）                  │   │
+│   │   ├── 网络配置（proxy, permissions）                 │   │
+│   │   └── 高级选项（recording, security）                │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                          ↓                                   │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │               Chromium 实例（通过 CDP）               │   │
+│   │   • 执行实际浏览器操作                               │   │
+│   │   • 返回页面状态                                    │   │
+│   │   • 管理下载和文件                                  │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Browser 与 Agent 的关系
+
+```python
+# Browser 管理浏览器实例
+browser = Browser(
+    headless=False,  # 显示模式
+    window_size={'width': 1280, 'height': 720},  # 窗口大小
+)
+
+# Agent 使用 Browser 执行任务
+agent = Agent(
+    task='搜索 Browser Use',
+    browser=browser,  # 传入 Browser 实例
+    llm=ChatBrowserUse(),
+)
+
+# Browser 和 Agent 可以复用
+async def main():
+    await agent.run()  # 使用同一个 Browser 运行
+```
 
 ## 基础用法
 
@@ -30,9 +91,19 @@ async def main():
     await agent.run()
 ```
 
+<Note icon="key" color="#FFC107" iconType="regular">
+**最佳实践**：一个 Browser 实例对应一个浏览器进程。复用 Browser 可以提高性能，但要注意及时关闭。
+</Note>
+
 ## 核心配置
 
 ### 浏览器显示模式
+
+| 模式 | 值 | 适用场景 | 特点 |
+|-----|---|---------|------|
+| **显示窗口** | `headless=False` | 开发调试 | 可见浏览器窗口 |
+| **无头模式** | `headless=True` | 生产环境 | 不显示窗口，性能略高 |
+| **自动检测** | `headless=None`（默认） | 通用 | 根据环境自动选择 |
 
 ```python
 # 显示浏览器窗口（用于调试）
@@ -45,66 +116,124 @@ browser = Browser(headless=True)
 browser = Browser(headless=None)
 ```
 
+<Warning>
+**生产环境建议**：使用 `headless=True` 可以略微提高性能（减少图形渲染开销），并且可以在没有显示器的服务器上运行。
+</Warning>
+
 ### 窗口大小
 
 ```python
-# 设置窗口尺寸
+# 设置窗口尺寸（整个浏览器窗口）
 browser = Browser(
     window_size={'width': 1920, 'height': 1080},
 )
 
-# 设置视口大小（内容区域）
+# 设置视口大小（内容显示区域）
 browser = Browser(
     viewport={'width': 1280, 'height': 720},
 )
 
-# 禁用视口模拟
+# 禁用视口模拟（内容自适应窗口大小）
 browser = Browser(no_viewport=True)
 
-# 设置窗口位置
+# 设置窗口位置（从屏幕左上角开始计算）
 browser = Browser(
-    window_position={'width': 0, 'height': 0},
+    window_position={'width': 100, 'height': 200},
 )
 
-# 设置设备缩放因子（DPI）
+# 设置设备缩放因子（DPI，2.0 适合 Retina 屏幕）
 browser = Browser(device_scale_factor=2.0)
+```
+
+### 窗口配置心智模型
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    窗口配置层级                               │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   window_size    ← 整个浏览器窗口大小                         │
+│       ↓                                                   │
+│   viewport       ← 内容显示区域（可小于 window_size）        │
+│       ↓                                                   │
+│   no_viewport    ← 禁用模拟，内容自适应窗口                  │
+│       ↓                                                   │
+│   device_scale_factor ← 缩放比例，影响截图清晰度            │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## 用户数据和配置
 
+### 用户数据目录
+
 ```python
-# 使用临时目录（无痕模式）
+# 使用临时目录（无痕模式，每次运行都是全新会话）
 browser = Browser(user_data_dir=None)
 
-# 使用指定的用户数据目录
+# 使用指定的用户数据目录（保存 Cookie、扩展等）
 browser = Browser(
     user_data_dir='~/.config/browser-use',
 )
 
-# 指定配置目录
+# 指定配置目录（Chrome profile 名称）
 browser = Browser(
     profile_directory='Default',  # 默认配置
     # profile_directory='Profile 1',  # 其他配置
 )
+```
 
+<Note>
+**profile_directory** 对应 Chrome 的 Profile 文件夹名称，如 "Default"、"Profile 1"、"Work Profile" 等。
+</Note>
+
+### 浏览器状态持久化
+
+```python
 # 从文件加载浏览器状态（Cookie、localStorage）
 browser = Browser(
     storage_state='./cookies.json',  # 文件路径
-    # 或直接传入字典
-    # storage_state={'cookies': [...], 'origins': [...]}
 )
+
+# 或直接传入字典
+browser = Browser(
+    storage_state={
+        'cookies': [
+            {'name': 'session', 'value': 'abc123', 'domain': '.example.com'}
+        ],
+        'origins': []
+    }
+)
+```
+
+**创建状态文件**：
+
+```python
+# 使用 Browser 的内置功能创建状态文件
+# 运行一次登录流程后保存状态
+
+from browser_use import Browser
+import json
+
+browser = Browser(
+    headless=False,
+    storage_state='./cookies.json',  # 保存状态到文件
+)
+# ... 执行登录操作 ...
+# 浏览器状态会自动保存到 cookies.json
 ```
 
 ## 网络和代理
 
+### 代理配置
+
 ```python
 from browser_use.browser import ProxySettings
 
-# 配置代理
 browser = Browser(
     proxy=ProxySettings(
         server="http://proxy-server:8080",
-        bypass="localhost,127.0.0.1",
+        bypass="localhost,127.0.0.1",  # 绕过代理的地址
         username="proxy-user",
         password="proxy-pass"
     ),
@@ -117,9 +246,9 @@ browser = Browser(
 # 限制只能访问特定域名
 browser = Browser(
     allowed_domains=[
-        '*.example.com',      # 允许所有子域名
-        'https://trusted.com',  # 允许特定 URL
-        'chrome-extension://*',  # 允许扩展程序
+        '*.example.com',           # 允许所有子域名
+        'https://trusted.com',     # 允许特定 URL
+        'chrome-extension://*',    # 允许扩展程序
     ]
 )
 
@@ -163,9 +292,9 @@ browser = Browser(
 
 ```python
 browser = Browser(
-    accept_downloads=True,         # 自动接受下载
-    downloads_path='./downloads',   # 下载目录
-    auto_download_pdfs=True,       # 自动下载 PDF
+    accept_downloads=True,          # 自动接受下载
+    downloads_path='./downloads',    # 下载目录
+    auto_download_pdfs=True,         # 自动下载 PDF（不显示在浏览器中）
 )
 ```
 
@@ -187,7 +316,7 @@ browser = Browser(
     executable_path='/usr/bin/google-chrome'
 )
 
-# 使用特定频道
+# 使用特定频道（自动查找）
 browser = Browser(
     channel='chromium',  # chromium, chrome, chrome-beta, msedge 等
 )
@@ -207,22 +336,44 @@ browser = Browser(
 )
 ```
 
+<Warning>
+**谨慎使用**：`--no-sandbox` 参数会降低安全性，只在确实需要时使用（如 Docker 容器中以 root 身份运行）。
+</Warning>
+
 ## 时间和性能
 
 ```python
 browser = Browser(
-    minimum_wait_page_load_time=0.5,     # 页面加载后最小等待时间（秒）
+    minimum_wait_page_load_time=0.5,      # 页面加载后最小等待时间（秒）
     wait_for_network_idle_page_load_time=1.0,  # 网络空闲等待时间（秒）
-    wait_between_actions=0.5,            # 操作之间等待时间（秒）
+    wait_between_actions=0.5,             # 操作之间等待时间（秒）
 )
+```
+
+### 性能调优心智模型
+
+```
+响应速度 ←→ 稳定性
+
+更快的设置：
+• wait_between_actions=0.1  # 减少等待
+• minimum_wait_page_load_time=0.1
+• wait_for_network_idle_page_load_time=0.2
+
+更稳定的设置：
+• wait_between_actions=1.0  # 增加等待
+• minimum_wait_page_load_time=1.0
+• wait_for_network_idle_page_load_time=2.0
+
+建议：从保守设置开始，根据实际运行情况逐步优化
 ```
 
 ## AI 和视觉配置
 
 ```python
 browser = Browser(
-    highlight_elements=True,             # 高亮可交互元素
-    paint_order_filtering=True,          # 启用 paint order 过滤
+    highlight_elements=True,              # 高亮可交互元素（帮助 Agent 识别）
+    paint_order_filtering=True,          # 启用 paint order 过滤（优化 DOM 树）
 )
 ```
 
@@ -233,20 +384,27 @@ browser = Browser(
     record_video_dir='./videos',         # 视频录制目录
     record_video_size={'width': 1280, 'height': 720},
     record_video_framerate=30,           # 帧率
-    record_har_path='./network.har',    # 网络追踪文件
-    record_har_content='embed',          # embed, omit, attach
-    traces_dir='./traces',               # 调试追踪目录
-    devtools=True,                       # 自动打开 DevTools
+    record_har_path='./network.har',     # 网络追踪文件
+    record_har_content='embed',         # embed: 包含响应体, omit: 不包含, attach: 作为附件
+    record_har_mode='full',             # full: 完整追踪, minimal: 最少信息
+    traces_dir='./traces',              # 调试追踪目录
+    devtools=True,                      # 自动打开 DevTools（仅 headless=False 时有效）
 )
 ```
+
+<Note icon="key" color="#FFC107" iconType="regular">
+**调试技巧**：遇到复杂问题时，开启录制功能可以重现问题，便于排查。
+</Note>
 
 ## 高级选项
 
 ```python
 # ⚠️ 不推荐：禁用浏览器安全功能
+# 可能导致跨域问题或其他安全风险
 browser = Browser(disable_security=True)
 
 # ⚠️ 不推荐：强制一致渲染
+# 会降低性能，但可能在某些情况下提高可重现性
 browser = Browser(deterministic_rendering=True)
 ```
 
@@ -309,8 +467,119 @@ browser2 = BrowserSession(headless=False)
 print(type(browser1) == type(browser2))  # True
 ```
 
+## 实践练习
+
+### 练习 1：创建无痕浏览器（⭐⭐）
+
+```python
+# 创建每次运行都清理状态的浏览器
+browser = Browser(user_data_dir=None)
+```
+
+**练习目标**：验证每次运行都是独立的会话。
+
+### 练习 2：配置代理和下载（⭐⭐⭐）
+
+```python
+from browser_use import Browser
+from browser_use.browser import ProxySettings
+
+browser = Browser(
+    headless=False,
+    proxy=ProxySettings(
+        server="http://proxy.example.com:8080",
+        bypass="localhost",
+    ),
+    accept_downloads=True,
+    downloads_path="./downloads",
+)
+```
+
+**练习目标**：配置代理并下载文件到指定目录。
+
+### 练习 3：复用登录状态（⭐⭐⭐）
+
+```python
+from browser_use import Browser
+
+# 第一步：登录并保存状态
+browser_login = Browser(
+    headless=False,
+    storage_state='./logged_in_state.json',
+)
+# ... 执行登录操作 ...
+
+# 第二步：复用登录状态
+browser = Browser(
+    headless=True,
+    storage_state='./logged_in_state.json',
+)
+# 现在可以直接访问需要登录的页面
+```
+
+## 常见问题
+
+### Q: Browser 如何正确关闭？
+
+**A**: Browser 会话通常在 Agent 运行完成后自动关闭。如需手动关闭：
+
+```python
+browser = Browser(headless=False)
+# ... 使用浏览器 ...
+
+# Browser 在 Agent 运行后自动清理
+```
+
+### Q: 如何提高页面加载速度？
+
+**A**: 优化以下参数：
+
+```python
+browser = Browser(
+    minimum_wait_page_load_time=0.1,  # 减少最小等待
+    wait_for_network_idle_page_load_time=0.3,  # 减少网络等待
+    wait_between_actions=0.2,         # 减少操作间隔
+)
+```
+
+<Warning>
+**注意**：过快的设置可能导致页面未加载完成就执行操作，需要根据目标网站调整。
+</Warning>
+
+### Q: 截图模糊怎么办？
+
+**A**: 调整 `device_scale_factor`：
+
+```python
+browser = Browser(
+    device_scale_factor=2.0,  # 提高截图清晰度
+)
+```
+
+### Q: 浏览器内存占用太高？
+
+**A**: 尝试以下优化：
+
+1. **使用无头模式**：`headless=True`
+2. **减少窗口大小**：`window_size={'width': 1280, 'height': 720}`
+3. **定期重启**：长时间运行时考虑创建新的 Browser 实例
+
 ## 相关资源
 
 - [远程浏览器](./remote-browser.mdx)
 - [真实浏览器](./real-browser.mdx)
 - [Agent 配置](/customize/agent/all-parameters)
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+
+**⭐ 学习检查**：完成本节后，你应该能：
+
+- [ ] 说出 Browser 类的主要配置参数
+- [ ] 根据场景选择合适的显示模式
+- [ ] 配置用户数据和状态持久化
+- [ ] 配置代理和访问控制
+- [ ] 优化浏览器性能
+
+</div>

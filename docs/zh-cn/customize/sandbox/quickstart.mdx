@@ -4,9 +4,48 @@ description: "在云端运行浏览器自动化。"
 icon: "rocket"
 ---
 
-## 概述
+<div className="mb-8">
+  <span className="text-sm px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full mr-2">⭐⭐⭐ 进阶级</span>
+  <span className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-full">预计阅读: 15分钟</span>
+</div>
+
+## 学习目标
+
+完成本文档学习后，你将能够：
+
+| 目标层级 | 描述 | 检验标准 |
+|---------|------|---------|
+| **记忆** | 说出沙箱的核心功能和参数 | 能列举 3 个沙箱核心参数 |
+| **理解** | 解释沙箱与本地部署的区别 | 能说明沙箱的优势 |
+| **应用** | 配置和使用沙箱进行生产部署 | 能独立完成沙箱配置 |
+
+## 核心概念
 
 **沙箱（Sandbox）** 是运行 Browser Use 生产环境部署最简单的方式。我们处理代理、浏览器、持久化、认证、Cookie 和 LLM 的所有细节。
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    沙箱 vs 本地部署                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   本地部署                                                    │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │  • 自己管理浏览器实例                                 │   │
+│   │  • 自己处理认证和 Cookie                             │   │
+│   │  • 自己配置代理和隐身                                │   │
+│   │  • 自己处理扩缩容                                    │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                                                              │
+│   沙箱部署                                                    │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │  • Browser Use Cloud 处理所有基础设施               │   │
+│   │  • 自动浏览器管理                                    │   │
+│   │  • 自动认证同步                                      │   │
+│   │  • 自动扩缩容                                        │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
 
 <Note>
 在 [cloud.browser-use.com/new-api-key](https://cloud.browser-use.com/new-api-key) 获取 API Key，新用户可获得 $10 免费额度。
@@ -33,6 +72,22 @@ async def my_task(browser: Browser):
 await my_task()
 ```
 
+### 沙箱执行心智模型
+
+```
+用户代码
+    ↓
+@sandbox() 装饰器
+    ↓
+Browser Use Cloud（自动处理）
+    ├── 浏览器实例分配
+    ├── 认证同步
+    ├── 代理配置
+    └── 扩缩容管理
+    ↓
+执行结果返回
+```
+
 ## 云端参数配置
 
 ```python
@@ -54,26 +109,26 @@ await task(url="https://example.com")
 
 ## 参数说明
 
-| 参数 | 说明 | 示例 |
-|-----|------|------|
-| `cloud_profile_id` | 使用云端配置保存的 Cookie 和认证 | `'profile-uuid'` |
-| `cloud_proxy_country_code` | 通过特定国家代理路由，实现隐身效果 | `'us'`、`'jp'` |
-| `cloud_timeout` | 浏览器保持打开的最大时间（分钟） | `30`、`60` |
+| 参数 | 说明 | 示例 | 适用场景 |
+|-----|------|------|---------|
+| `cloud_profile_id` | 使用云端配置保存的 Cookie 和认证 | `'profile-uuid'` | 需要登录态的任务 |
+| `cloud_proxy_country_code` | 通过特定国家代理路由 | `'us'`、`'jp'` | 绕过地理限制 |
+| `cloud_timeout` | 浏览器保持打开的最大时间（分钟） | `30`、`60` | 长时间运行任务 |
 
-## 代理国家代码
+### 代理国家代码
 
-| 代码 | 国家 |
-|-----|------|
-| us | 美国 |
-| uk | 英国 |
-| fr | 法国 |
-| it | 意大利 |
-| jp | 日本 |
-| au | 澳大利亚 |
-| de | 德国 |
-| fi | 芬兰 |
-| ca | 加拿大 |
-| in | 印度 |
+| 代码 | 国家 | 适用场景 |
+|-----|------|---------|
+| us | 美国 | 通用、美国网站 |
+| uk | 英国 | 欧洲、英国网站 |
+| fr | 法国 | 欧洲、法国网站 |
+| it | 意大利 | 欧洲、意大利网站 |
+| jp | 日本 | 亚洲、日本网站 |
+| au | 澳大利亚 | 大洋洲、澳大利亚网站 |
+| de | 德国 | 欧洲、德国网站 |
+| fi | 芬兰 | 欧洲、芬兰网站 |
+| ca | 加拿大 | 北美、加拿大网站 |
+| in | 印度 | 亚洲、印度网站 |
 
 ## 沙箱事件
 
@@ -104,6 +159,15 @@ async def monitored_task(browser: Browser):
 await monitored_task()
 ```
 
+### 事件类型
+
+| 事件 | 说明 | 数据内容 |
+|-----|------|---------|
+| `agent_start` | 代理开始执行 | 任务描述、Agent ID |
+| `action` | 执行操作 | 操作类型、参数 |
+| `agent_done` | 代理完成 | 执行结果、耗时 |
+| `error` | 发生错误 | 错误信息 |
+
 ## 错误处理
 
 ```python
@@ -127,8 +191,135 @@ async def robust_task(browser: Browser):
 await robust_task()
 ```
 
+### 错误处理最佳实践
+
+<AccordionGroup>
+  <Accordion title="1. 设置合理的重试次数">
+    使用 `max_failures` 参数自动重试失败的步骤。
+  </Accordion>
+  <Accordion title="2. 捕获异常">
+    使用 try-except 捕获 BrowserUseError。
+  </Accordion>
+  <Accordion title="3. 使用事件监控">
+    通过事件回调实时监控执行状态。
+  </Accordion>
+  <Accordion title="4. 设置超时">
+    使用 `cloud_timeout` 防止无限运行。
+  </Accordion>
+</AccordionGroup>
+
+## 沙箱 vs 本地部署对比
+
+| 特性 | 沙箱部署 | 本地部署 |
+|-----|---------|---------|
+| **设置复杂度** | 一行代码 | 需要配置环境 |
+| **浏览器管理** | 自动 | 手动 |
+| **认证同步** | 自动 | 手动 |
+| **隐身能力** | 高级（代理 + 指纹） | 基础 |
+| **扩缩容** | 自动 | 手动 |
+| **成本** | 按使用付费 | 免费（自备资源） |
+| **数据隐私** | 上传云端 | 本地保留 |
+
+## 实践练习
+
+### 练习 1：基本沙箱使用（⭐⭐⭐）
+
+```python
+from browser_use import sandbox, Browser
+
+@sandbox()
+async def basic_task(browser: Browser):
+    agent = Agent(
+        task="访问 example.com，提取页面标题",
+        browser=browser,
+        llm=ChatBrowserUse()
+    )
+    history = await agent.run()
+    return history.final_result()
+
+result = await basic_task()
+print(result)
+```
+
+### 练习 2：配置认证和代理（⭐⭐⭐）
+
+```python
+@sandbox(
+    cloud_profile_id='your-profile-id',      # 登录态
+    cloud_proxy_country_code='us',           # 美国代理
+)
+async def auth_task(browser: Browser):
+    agent = Agent(
+        task="访问需要登录的网站",
+        browser=browser,
+        llm=ChatBrowserUse()
+    )
+    await agent.run()
+```
+
+### 练习 3：监控执行过程（⭐⭐⭐）
+
+```python
+@sandbox()
+async def monitored_task(browser: Browser):
+    agent = Agent(
+        task="复杂的多步骤任务",
+        browser=browser,
+        llm=ChatBrowserUse()
+    )
+
+    # 事件回调
+    agent.on("agent_start", lambda data: print(f"🚀 开始：{data}"))
+    agent.on("action", lambda data: print(f"⚡ 操作：{data.get('type')}"))
+    agent.on("agent_done", lambda data: print(f"✅ 完成：{data}"))
+
+    await agent.run()
+```
+
+## 常见问题
+
+### Q: 沙箱如何保证数据安全？
+
+**A**: Browser Use Cloud 采用企业级安全措施，包括：
+- 数据加密传输
+- 隔离的浏览器环境
+- 自动清理会话数据
+
+### Q: 如何选择沙箱还是本地部署？
+
+**A**:
+
+**选择沙箱的情况**：
+- 需要快速上手
+- 需要隐身功能
+- 需要自动扩缩容
+- 不想管理基础设施
+
+**选择本地部署的情况**：
+- 数据隐私要求高
+- 需要完全控制环境
+- 成本敏感
+- 有运维能力
+
+### Q: 沙箱支持自定义浏览器配置吗？
+
+**A**: 沙箱会使用优化的默认配置。如需特殊配置，请使用本地部署。
+
 ## 相关资源
 
 - [生产环境部署](/production)
 - [Agent 配置](/customize/agent/all-parameters)
 - [浏览器配置](/customize/browser/basics)
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+
+**⭐ 学习检查**：完成本节后，你应该能：
+
+- [ ] 说出沙箱的核心功能和参数
+- [ ] 解释沙箱与本地部署的区别
+- [ ] 配置和使用沙箱进行生产部署
+- [ ] 处理沙箱执行中的错误和异常
+
+</div>

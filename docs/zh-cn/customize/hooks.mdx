@@ -5,9 +5,44 @@ icon: "wrench"
 mode: "wide"
 ---
 
-## 概述
+<div className="mb-8">
+  <span className="text-sm px-3 py-1 bg-purple-100 text-purple-800 rounded-full mr-2">⭐⭐⭐⭐ 专家级</span>
+  <span className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-full">预计阅读: 25分钟</span>
+</div>
 
-Browser-Use 提供生命周期钩子，允许你在代理执行的特定点执行自定义代码。钩子函数可用于在运行时读取和修改代理状态、实现自定义逻辑、更改配置、将代理与外部应用程序集成。
+## 学习目标
+
+完成本文档学习后，你将能够：
+
+| 目标层级 | 描述 | 检验标准 |
+|---------|------|---------|
+| **记忆** | 说出可用的钩子类型和调用时机 | 能列举 2 种以上钩子 |
+| **理解** | 解释钩子与 Agent 对象的关系 | 能说明钩子的执行流程 |
+| **应用** | 使用钩子实现自定义逻辑和集成 | 能完成复杂的钩子应用 |
+
+## 核心概念
+
+Browser-Use 提供生命周期钩子，允许你在代理执行的特定点执行自定义代码。
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    钩子执行流程                               │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   Agent 创建                                                 │
+│        ↓                                                    │
+│   on_step_start ← 每步开始时                                │
+│        ↓                                                    │
+│   代理执行步骤                                               │
+│        ↓                                                    │
+│   on_step_end ← 每步结束时                                  │
+│        ↓                                                    │
+│   ... 重复 N 步 ...                                          │
+│        ↓                                                    │
+│   任务完成                                                   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## 可用钩子
 
@@ -97,7 +132,7 @@ if __name__ == '__main__':
 | `agent.tools.registry.execute_action('click', {'index': 123}, browser_session=agent.browser_session)` | 执行操作 |
 | `agent.sensitive_data` | 敏感数据字典，可就地更新以添加/删除/修改项目 |
 | `agent.settings` | 传递给 `Agent(...)` 初始化时的所有配置选项 |
-| `agent.llm | 直接访问主 LLM 对象（例如 `ChatOpenAI`） |
+| `agent.llm` | 直接访问主 LLM 对象（例如 `ChatOpenAI`） |
 | `agent.state` | 访问大量内部状态，包括代理想法、输出、操作等 |
 | `agent.history` | 访问代理执行的历史数据 |
 | `agent.history.model_thoughts()` | 来自 Browser Use 模型的推理 |
@@ -112,14 +147,45 @@ if __name__ == '__main__':
 | `agent.browser_session.get_current_page_url()` | 获取当前活动标签页的 URL |
 | `agent.browser_session.get_current_page_title()` | 获取当前活动标签页的标题 |
 
+## 常见应用场景
+
+| 场景 | 钩子类型 | 说明 |
+|-----|---------|------|
+| 实时监控 | `on_step_start` | 每步开始时记录状态 |
+| 数据提取 | `on_step_end` | 每步结束时提取数据 |
+| 条件暂停 | 两者 | 根据条件暂停执行 |
+| 自定义验证 | `on_step_end` | 验证步骤结果 |
+| 外部集成 | 两者 | 与外部系统同步 |
+
 ## 使用技巧
 
-- **避免阻塞操作**：由于钩子与代理在同一个执行线程中运行，请保持高效并避免阻塞操作。
-- **改用自定义工具**：钩子是相当高级的功能，大多数功能可以使用[自定义工具](/customize/tools/basics)实现
-- **增加 step_timeout**：如果你的钩子正在做需要很长时间的事情，你可以增加 `Agent(...)` 构造函数中的 `step_timeout` 参数。
+<AccordionGroup>
+  <Accordion title="避免阻塞操作">
+    由于钩子与代理在同一个执行线程中运行，请保持高效并避免阻塞操作。
+  </Accordion>
+  <Accordion title="改用自定义工具">
+    钩子是相当高级的功能，大多数功能可以使用[自定义工具](/customize/tools/basics)实现
+  </Accordion>
+  <Accordion title="增加 step_timeout">
+    如果你的钩子正在做需要很长时间的事情，你可以增加 `Agent(...)` 构造函数中的 `step_timeout` 参数。
+  </Accordion>
+</AccordionGroup>
 
 ## 相关资源
 
 - [自定义工具基础](/customize/tools/basics)
 - [Agent 配置](/customize/agent/all-parameters)
 - [Actor 基础](/customize/actor/basics)
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+
+**⭐ 学习检查**：完成本节后，你应该能：
+
+- [ ] 说出可用的钩子类型和调用时机
+- [ ] 解释钩子与 Agent 对象的关系
+- [ ] 使用钩子实现自定义逻辑和集成
+- [ ] 理解钩子的最佳实践
+
+</div>

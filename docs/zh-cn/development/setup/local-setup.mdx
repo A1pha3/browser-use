@@ -5,16 +5,76 @@ icon: "laptop-code"
 mode: "wide"
 ---
 
-## 欢迎来到 Browser Use 开发！
+<div className="mb-8">
+  <span className="text-sm px-3 py-1 bg-green-100 text-green-800 rounded-full mr-2">⭐⭐ 基础级</span>
+  <span className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-full">预计阅读: 15分钟</span>
+</div>
+
+## 学习目标
+
+完成本文档学习后，你将能够：
+
+| 目标层级 | 描述 | 检验标准 |
+|---------|------|---------|
+| **记忆** | 说出本地开发环境搭建的步骤 | 能默写安装命令 |
+| **理解** | 解释项目结构和编码规范 | 能说明代码规范的重要性 |
+| **应用** | 搭建完整的开发环境并提交代码 | 能独立完成开发流程 |
+
+## 核心概念
+
+欢迎加入 Browser Use 开发者社区！本节介绍如何搭建本地开发环境。
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    开发环境架构                               │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │                    开发工具                           │   │
+│   │   ├── uv - 包管理器                                  │   │
+│   │   ├── git - 版本控制                                 │   │
+│   │   └── IDE - 开发环境                                 │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                          ↓                                   │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │                    项目配置                           │   │
+│   │   ├── 依赖安装 (uv sync)                            │   │
+│   │   ├── 环境变量 (.env)                                │   │
+│   │   └── 编码规范 (Black, Ruff, mypy)                   │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                          ↓                                   │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │                    开发工作流                         │   │
+│   │   ├── 创建分支 → 编写代码 → 运行测试 → 提交更改       │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 环境搭建
+
+### 1. 克隆仓库
 
 ```bash
 git clone https://github.com/browser-use/browser-use
 cd browser-use
-uv sync --all-extras --dev
-# 或使用 pip：pip install -U git+https://github.com/browser-use/browser-use.git@main
 ```
 
-## 环境配置
+### 2. 安装依赖
+
+```bash
+# 使用 uv sync 安装所有依赖（推荐）
+uv sync --all-extras --dev
+
+# 或使用 pip
+pip install -U git+https://github.com/browser-use/browser-use.git@main
+```
+
+<Note icon="key" color="#FFC107" iconType="regular">
+**推荐使用 uv**：`uv` 比 pip 快 10-100 倍，并且自动管理虚拟环境。
+</Note>
+
+### 3. 环境配置
 
 设置你的环境变量：
 
@@ -22,13 +82,19 @@ uv sync --all-extras --dev
 # 复制示例环境文件
 cp .env.example .env
 
-# 设置日志级别
+# 设置日志级别（可选）
 # BROWSER_USE_LOGGING_LEVEL=debug
 ```
 
 ## 辅助脚本
 
 常用开发任务脚本：
+
+| 脚本 | 功能 | 使用场景 |
+|-----|------|---------|
+| `./bin/setup.sh` | 完整设置脚本 | 首次搭建环境 |
+| `./bin/lint.sh` | 运行所有检查 | 代码提交前 |
+| `./bin/test.sh` | 运行测试套件 | 验证代码改动 |
 
 ```bash
 # 完整设置脚本 - 安装 uv，创建虚拟环境，安装依赖
@@ -49,41 +115,54 @@ uv run examples/simple.py
 
 ## 开发工作流
 
-### 1. 创建功能分支
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Git 工作流                                 │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   1. 创建功能分支                                             │
+│      git checkout -b feature/your-feature-name               │
+│                                                              │
+│   2. 编写代码                                                │
+│      按照项目编码规范编写代码                                  │
+│                                                              │
+│   3. 运行测试                                                │
+│      ./bin/test.sh                                          │
+│                                                              │
+│   4. 提交更改                                                │
+│      git add .                                              │
+│      git commit -m "feat: 添加新功能"                         │
+│      git push origin feature/your-feature-name               │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 创建功能分支
 
 ```bash
 git checkout -b feature/your-feature-name
 ```
 
-### 2. 编写代码
+### 提交规范
 
-按照项目编码规范编写代码。
-
-### 3. 运行测试
-
-```bash
-./bin/test.sh
-```
-
-### 4. 提交更改
-
-```bash
-git add .
-git commit -m "feat: 添加新功能"
-git push origin feature/your-feature-name
-```
+| 类型 | 说明 | 示例 |
+|-----|------|------|
+| feat | 新功能 | `feat: 添加用户认证` |
+| fix | 修复 bug | `fix: 修复页面加载问题` |
+| docs | 文档更新 | `docs: 更新 API 文档` |
+| refactor | 重构 | `refactor: 重构代理逻辑` |
 
 ## 代码规范
 
-### 格式化
-
 项目使用以下工具保持代码质量：
 
-- **Black** - 代码格式化
-- **Ruff** - 代码 linting
-- **mypy** - 类型检查
+| 工具 | 功能 | 命令 |
+|-----|------|------|
+| **Black** | 代码格式化 | `black .` |
+| **Ruff** | 代码 linting | `ruff check .` |
+| **mypy** | 类型检查 | `mypy .` |
 
-运行格式化：
+运行所有检查：
 
 ```bash
 ./bin/lint.sh
@@ -134,10 +213,106 @@ def test_example():
     assert True
 ```
 
-### 运行特定测试
+### 运行测试
 
 ```bash
+# 运行所有测试
+./bin/test.sh
+
+# 运行特定测试
 uv pytest tests/test_example.py
+```
+
+## 实践练习
+
+### 练习 1：搭建开发环境（⭐）
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/browser-use/browser-use
+cd browser-use
+
+# 2. 安装依赖
+uv sync --all-extras --dev
+
+# 3. 验证安装
+uv run python -c "import browser_use; print(browser_use.__version__)"
+```
+
+### 练习 2：运行示例（⭐）
+
+```bash
+uv run examples/simple.py
+```
+
+### 练习 3：创建并提交功能（⭐⭐）
+
+```bash
+# 1. 创建分支
+git checkout -b feature/my-new-feature
+
+# 2. 编写代码
+# ... 编辑代码 ...
+
+# 3. 运行检查
+./bin/lint.sh
+./bin/test.sh
+
+# 4. 提交
+git add .
+git commit -m "feat: 添加新功能"
+git push origin feature/my-new-feature
+```
+
+## 常见问题
+
+### Q: uv sync 失败怎么办？
+
+**A**:
+
+1. **检查 Python 版本**：`python --version`（需要 3.11+）
+2. **清除缓存**：`uv cache clean`
+3. **重新安装**：`rm -rf .venv && uv sync`
+
+### Q: lint.sh 检查不通过怎么办？
+
+**A**:
+
+1. **格式化代码**：`black .`
+2. **修复 lint 错误**：`ruff check . --fix`
+3. **类型检查**：`mypy .`（修复类型注解）
+
+### Q: 测试失败怎么办？
+
+**A**:
+
+1. **查看错误信息**：运行 `uv pytest tests/ -v`
+2. **检查是否破坏现有功能**：确保改动没有影响已有测试
+3. **添加新测试**：为新功能添加对应测试
+
+### Q: 如何添加新依赖？
+
+**A**:
+
+```bash
+# 添加依赖到 pyproject.toml
+uv add package-name
+
+# 添加开发依赖
+uv add --dev package-name
+```
+
+### Q: .env 文件应该包含什么？
+
+**A**:
+
+```bash
+# API Keys（根据需要）
+BROWSER_USE_API_KEY=
+OPENAI_API_KEY=
+
+# 日志级别（可选）
+# BROWSER_USE_LOGGING_LEVEL=debug
 ```
 
 ## 相关资源
@@ -145,3 +320,16 @@ uv pytest tests/test_example.py
 - [GitHub 仓库](https://github.com/browser-use/browser-use)
 - [问题反馈](https://github.com/browser-use/browser-use/issues)
 - [Discord 社区](https://link.browser-use.com/discord)
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+
+**⭐ 学习检查**：完成本节后，你应该能：
+
+- [ ] 搭建完整的本地开发环境
+- [ ] 理解项目结构和编码规范
+- [ ] 遵循 Git 工作流提交代码
+- [ ] 运行测试和代码检查
+
+</div>

@@ -4,6 +4,22 @@ description: "安装 Browser Use 并运行你的第一个浏览器自动化任�
 icon: "rocket"
 ---
 
+<div className="mb-8">
+  <span className="text-sm px-3 py-1 bg-green-100 text-green-800 rounded-full mr-2">⭐⭐ 基础级</span>
+  <span className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-full">预计阅读: 30分钟</span>
+  <span className="text-sm px-3 py-1 bg-blue-100 text-blue-800 rounded-full">Python 基础</span>
+</div>
+
+## 学习目标
+
+完成本文档学习后，你将能够：
+
+| 目标层级 | 描述 | 检验标准 |
+|---------|------|---------|
+| **记忆** | 说出 Browser Use 的安装步骤和基本组件 | 能默写安装命令和基础代码结构 |
+| **理解** | 解释 Agent、Browser、LLM 之间的关系 | 能画出三者的协作关系图 |
+| **应用** | 独立完成本地环境安装并运行首个 Agent | 能成功运行示例代码并看到结果 |
+
 ## 前置条件
 
 在开始之前，请确保你的系统满足以下要求：
@@ -11,10 +27,46 @@ icon: "rocket"
 - **Python 版本**：3.11 或更高版本
 - **操作系统**：macOS、Windows、Linux
 - **包管理器**：推荐使用 [uv](https://docs.astral.sh/uv/)，也支持 pip
+- **基础技能**：了解 Python 虚拟环境和基本语法
 
 <Note icon="key" color="#FFC107" iconType="regular">
 `ChatBrowserUse` 提供[最快且最具性价比的模型](https://browser-use.com/posts/speed-matters/)，完成任务的速度比其他模型快 **3-5 倍**。新用户可获得 **$10** 的[免费 LLM 额度](https://cloud.browser-use.com/new-api-key)。
 </Note>
+
+## 核心架构认知
+
+在开始安装之前，先理解 Browser Use 的核心组件：
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Browser Use 核心组件                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │                    用户代码                          │   │
+│   │   Agent(task="任务描述", llm=模型, browser=浏览器)   │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                          ↓                                   │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │                  Agent（代理）                        │   │
+│   │   • 解析任务描述                                    │   │
+│   │   • 规划执行步骤                                    │   │
+│   │   • 调用 LLM 决策下一步                             │   │
+│   │   • 通过 Browser 执行操作                           │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                          ↓                                   │
+│   ┌──────────────────┐    ┌──────────────────┐             │
+│   │   LLM（大语言模型）  │    │  Browser（浏览器） │             │
+│   │   • OpenAI        │    │  • Chromium      │             │
+│   │   • Anthropic     │    │  • CDP 协议通信   │             │
+│   │   • Google        │    │  • 执行实际操作   │             │
+│   │   • ChatBrowserUse│    │  • 返回页面状态   │             │
+│   └──────────────────┘    └──────────────────┘             │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+
+关键点：Agent 是协调者，LLM 负责思考，Browser 负责执行
+```
 
 ## 第一步：安装 Browser Use
 
@@ -27,6 +79,11 @@ source .venv/bin/activate
 # Windows 用户使用 `.venv\Scripts\activate`
 ```
 
+**为什么使用 uv？**
+- 比 pip 快 10-100 倍
+- 自动管理依赖
+- 支持 Python 3.11+
+
 ### 1.2 安装浏览器自动化库
 
 ```bash
@@ -35,6 +92,20 @@ uv pip install browser-use
 
 # 安装 Chromium 浏览器
 uvx browser-use install
+```
+
+<Warning>
+**注意**：确保在安装完成后运行 `uvx browser-use install`，否则 Browser Use 无法控制浏览器。
+</Warning>
+
+### 验证安装
+
+```bash
+# 检查 Python 包是否安装成功
+python -c "import browser_use; print('browser_use 版本:', browser_use.__version__)"
+
+# 检查 Chromium 是否可用
+uvx browser-use install --check
 ```
 
 ## 第二步：配置 API Key
@@ -72,6 +143,10 @@ touch .env
   ANTHROPIC_API_KEY=
   ```
 </CodeGroup>
+
+<Note icon="key" color="#FFC107" iconType="regular">
+**推荐使用 ChatBrowserUse**：专门为浏览器自动化优化，速度最快、准确性最高。
+</Note>
 
 ## 第三步：运行你的第一个代理
 
@@ -160,13 +235,17 @@ touch .env
 python example.py
 ```
 
-## 第四步：查看结果
+## 第四步：理解执行结果
+
+### 结果结构说明
 
 代理运行完成后，你会看到以下输出：
 
-- **执行历史**：包含所有操作步骤的详细记录
-- **截图路径**：每个步骤的页面截图
-- **提取内容**：从页面中提取的结构化数据
+```
+# 执行历史：包含所有操作步骤的详细记录
+# 截图路径：每个步骤的页面截图
+# 提取内容：从页面中提取的结构化数据
+```
 
 ```python
 # 获取运行结果
@@ -183,11 +262,228 @@ print(history.extracted_content())
 
 # 查看最终结果
 print(history.final_result())
+
+# 查看执行步数
+print(history.number_of_steps())
 ```
 
-## 下一步
+### 执行流程可视化
 
-### 自定义浏览器配置
+```
+用户运行脚本
+    ↓
+Agent 初始化（加载 LLM、Browser）
+    ↓
+Agent.run() 开始执行
+    ↓
+循环步骤：
+  1. 捕获当前页面状态（HTML + 截图）
+  2. 发送给 LLM 分析
+  3. LLM 返回下一个动作（如：click(3), input("text")）
+  4. Browser 执行动作
+  5. 验证结果，继续或调整策略
+    ↓
+任务完成或达到最大步数
+    ↓
+返回执行历史（history）
+```
+
+## 实践练习
+
+### 练习 1：运行第一个 Agent（⭐⭐）
+
+按照上面的步骤，完成以下任务：
+
+| 步骤 | 任务 | 检验标准 |
+|-----|------|---------|
+| 1 | 创建虚拟环境并安装 browser-use | `python -c "import browser_use"` 成功 |
+| 2 | 配置 API Key | .env 文件包含有效的 KEY |
+| 3 | 创建并运行 example.py | 控制台输出执行历史 |
+| 4 | 修改任务描述 | Agent 能完成不同的任务 |
+
+### 练习 2：探索执行历史（⭐⭐）
+
+修改代码，输出更多信息：
+
+```python
+async def main():
+    llm = ChatBrowserUse()
+    task = "访问 https://quotes.toscrape.com/，提取前 3 条名人名言"
+    agent = Agent(task=task, llm=llm)
+    history = await agent.run()
+
+    # 探索执行历史
+    print(f"总步数: {history.number_of_steps()}")
+    print(f"访问的 URL: {history.urls()}")
+    print(f"最终结果: {history.final_result()}")
+
+    # 查看所有动作
+    for i, action in enumerate(history.model_actions()):
+        print(f"步骤 {i+1}: {action}")
+
+asyncio.run(main())
+```
+
+### 练习 3：心智模型 - 任务分解（⭐⭐⭐）
+
+**分解思维练习**：
+
+任务描述往往比较模糊，Agent 需要理解并分解任务。
+
+```
+示例任务："帮我找一些关于 AI 的新闻"
+
+Agent 的思考过程：
+1. 理解意图：用户想获取 AI 相关的新闻信息
+2. 确定子任务：
+   - 确定搜索目标：AI 新闻
+   - 选择平台：搜索引擎或新闻网站
+   - 执行搜索
+   - 提取标题、链接、发布时间
+3. 执行并验证
+```
+
+**练习任务**：分析以下任务，Agent 会如何分解？
+
+1. "比较 iPhone 15 和 Samsung S24 的价格"
+2. "找到 Hacker News 上今天的热门文章"
+3. "订阅某博客的所有新文章"
+
+## 常见问题与排查
+
+### 问题分类决策树
+
+```
+运行失败？
+    ↓
+┌─────────────────────────────────────────┐
+│ 错误信息是什么？                          │
+├─────────────────────────────────────────┤
+│ "ModuleNotFoundError"                   │ → 包未安装
+│ "API Key not found"                    │ → 环境变量问题
+│ "No chromium found"                    │ → 浏览器未安装
+│ "Connection timeout"                    │ → 网络问题
+│ "Navigation failed"                    │ → 目标网站问题
+└─────────────────────────────────────────┘
+```
+
+### Q: 代理运行失败怎么办？
+
+**A**: 请按顺序检查：
+
+1. **API Key 是否正确配置**
+   ```bash
+   # 检查环境变量
+   echo $BROWSER_USE_API_KEY
+   # 或在代码中验证
+   from dotenv import load_dotenv
+   import os
+   load_dotenv()
+   print("API Key:", os.getenv("BROWSER_USE_API_KEY"))
+   ```
+
+2. **Chromium 是否已安装**
+   ```bash
+   uvx browser-use install
+   ```
+
+3. **网络连接**
+   - 确保能访问目标网站
+   - 确保能访问 LLM API
+
+4. **增加重试次数**
+   ```python
+   agent = Agent(
+       task="任务",
+       llm=llm,
+       max_failures=5,  # 增加重试次数
+   )
+   ```
+
+### Q: 如何提高任务成功率？
+
+**A**: 建议尝试以下方法：
+
+1. **使用更强大的模型**：如 `ChatBrowserUse` 或 `o3`
+2. **增加步骤限制**：`max_steps` 参数可以设置最大步数
+3. **添加初始操作**：`initial_actions` 可以预设一些操作
+4. **使用视觉模式**：`use_vision=True` 让代理分析页面截图
+
+### Q: 如何处理验证码？
+
+**A**: 本地运行很难绕过验证码。建议使用：
+
+1. **Browser Use Cloud**：提供隐身浏览器，可自动绕过大多数验证码
+2. **代理配置**：使用高质量代理 IP
+3. **手动干预**：在遇到验证码时暂停任务，人工完成验证
+
+## 错误处理最佳实践
+
+### 1. 设置合理的超时
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+
+async def main():
+    browser = Browser(
+        step_timeout=120,  # 每个步骤超时 120 秒
+    )
+
+    agent = Agent(
+        task="复杂任务",
+        llm=ChatBrowserUse(),
+        browser=browser,
+        max_failures=3,    # 最多失败 3 次
+    )
+
+    history = await agent.run()
+```
+
+### 2. 捕获异常
+
+```python
+import asyncio
+from browser_use import Agent, ChatBrowserUse
+
+async def safe_run():
+    try:
+        llm = ChatBrowserUse()
+        agent = Agent(task="你的任务", llm=llm)
+        history = await agent.run()
+        return history
+    except Exception as e:
+        print(f"执行失败: {e}")
+        return None
+
+history = asyncio.run(safe_run())
+```
+
+### 3. 验证结果
+
+```python
+history = await agent.run()
+
+# 检查是否成功完成
+if history.is_done():
+    print("任务完成！")
+    print(history.final_result())
+else:
+    print("任务未完成，可能需要更多步骤或调整任务描述")
+    print(f"已执行步数: {history.number_of_steps()}")
+```
+
+## 下一步学习
+
+| 路径 | 主题 | 推荐文档 |
+|-----|------|---------|
+| ⭐ | 模型选择 | [支持的模型](./supported-models.mdx) |
+| ⭐⭐ | 浏览器配置 | [自定义浏览器](./customize/browser/basics.mdx) |
+| ⭐⭐ | Agent 配置 | [Agent 配置](./customize/agent/basics.mdx) |
+| ⭐⭐⭐ | 生产部署 | [生产环境部署](./production.mdx) |
+
+### 进阶主题预览
+
+#### 自定义浏览器配置
 
 你可以通过 `Browser` 类自定义浏览器的行为：
 
@@ -209,7 +505,7 @@ async def main():
 asyncio.run(main())
 ```
 
-### 添加自定义工具
+#### 添加自定义工具
 
 扩展代理的功能，添加自定义工具：
 
@@ -230,41 +526,22 @@ agent = Agent(
 )
 ```
 
-### 生产环境部署
-
-查看[生产环境部署指南](./production.mdx)，了解如何大规模运行 Browser Use。
-
-## 常见问题
-
-### Q: 代理运行失败怎么办？
-
-A: 请检查以下几点：
-
-1. **API Key 是否正确配置**：确保 `.env` 文件中的 API Key 有效
-2. **Chromium 是否已安装**：运行 `uvx browser-use install`
-3. **网络连接**：确保能够访问目标网站和 LLM 服务
-4. **增加重试次数**：`Agent` 的 `max_failures` 参数可以设置重试次数
-
-### Q: 如何提高任务成功率？
-
-A: 建议尝试以下方法：
-
-1. **使用更强大的模型**：如 `ChatBrowserUse` 或 `o3`
-2. **增加步骤限制**：`max_steps` 参数可以设置最大步数
-3. **添加初始操作**：`initial_actions` 可以预设一些操作
-4. **使用视觉模式**：`use_vision=True` 让代理分析页面截图
-
-### Q: 如何处理验证码？
-
-A: 本地运行很难绕过验证码。建议使用：
-
-1. **Browser Use Cloud**：提供隐身浏览器，可自动绕过大多数验证码
-2. **代理配置**：使用高质量代理 IP
-3. **手动干预**：在遇到验证码时暂停任务，人工完成验证
-
 ## 相关资源
 
 - [支持的模型](./supported-models.mdx)
 - [自定义浏览器配置](/customize/browser/basics)
 - [自定义工具](/customize/tools/basics)
 - [生产环境部署](./production.mdx)
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+
+**⭐ 学习检查**：完成本节后，你应该能：
+
+- [ ] 独立完成 Browser Use 的安装和配置
+- [ ] 解释 Agent、Browser、LLM 三者的关系
+- [ ] 成功运行第一个 Agent 并理解执行结果
+- [ ] 排查常见的安装和运行问题
+
+</div>

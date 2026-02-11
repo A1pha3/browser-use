@@ -5,9 +5,76 @@ icon: "wrench"
 mode: "wide"
 ---
 
-## 概述
+<div className="mb-8">
+  <span className="text-sm px-3 py-1 bg-green-100 text-green-800 rounded-full mr-2">⭐⭐ 基础级</span>
+  <span className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-full">预计阅读: 25分钟</span>
+  <span className="text-sm px-3 py-1 bg-purple-100 text-purple-800 rounded-full">Python 异步编程</span>
+</div>
+
+## 学习目标
+
+完成本文档学习后，你将能够：
+
+| 目标层级 | 描述 | 检验标准 |
+|---------|------|---------|
+| **记忆** | 说出工具的定义方式和返回类型 | 能编写基础工具函数 |
+| **理解** | 解释 ActionResult 各字段的作用 | 能选择合适的返回类型 |
+| **应用** | 创建满足特定需求的工具 | 能扩展 Agent 的能力 |
+
+## 核心概念
 
 **工具（Tools）** 是扩展代理能力的自定义函数。通过添加工具，你可以让代理执行任意操作，如调用 API、发送邮件、读取数据库等。
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Tools 架构图                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │                    Agent                              │   │
+│   │   ├── 默认工具（点击、输入、滚动等）                  │   │
+│   │   └── 自定义工具（通过 @tools.action 注册）          │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                          ↓                                   │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │                    工具注册表                         │   │
+│   │   • 注册工具函数                                     │   │
+│   │   • 生成工具描述（供 LLM 理解）                       │   │
+│   │   • 分发工具调用结果                                 │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                          ↓                                   │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │                    自定义工具                         │   │
+│   │   • API 调用                                        │   │
+│   │   • 文件操作                                        │   │
+│   │   • 数据库查询                                       │   │
+│   │   • 外部服务集成                                     │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 工具与 Agent 的关系
+
+```python
+from browser_use import Tools, Agent, ChatBrowserUse
+
+# 创建工具注册表
+tools = Tools()
+
+# 注册自定义工具
+@tools.action('获取当前时间')
+async def get_current_time() -> str:
+    from datetime import datetime
+    return datetime.now().isoformat()
+
+# Agent 可以使用所有已注册的工具
+agent = Agent(
+    task="获取当前时间并显示",
+    llm=ChatBrowserUse(),
+    tools=tools,  # 传入工具注册表
+)
+```
 
 ## 快速示例
 
@@ -34,7 +101,7 @@ agent = Agent(
 
 ## ActionResult
 
-`ActionResult` 是工具返回结果的包装类：
+`ActionResult` 是工具返回结果的包装类，提供丰富的语义化信息：
 
 ```python
 from browser_use import ActionResult
@@ -52,6 +119,21 @@ return ActionResult(
     attachments=["file.pdf"],  # 附件列表
 )
 ```
+
+### ActionResult 字段说明
+
+| 字段 | 类型 | 说明 | 使用场景 |
+|-----|------|------|---------|
+| `extracted_content` | str | 主要结果内容 | 所有工具的返回值 |
+| `long_term_memory` | str | 长期记忆信息 | 重要信息需要 Agent 记住 |
+| `error` | str | 错误信息 | 操作失败时返回 |
+| `success` | bool | 操作是否成功 | 区分成功和失败状态 |
+| `is_done` | bool | 任务是否完成 | 提前结束任务 |
+| `attachments` | list | 附件列表 | 返回文件等信息 |
+
+<Note icon="key" color="#FFC107" iconType="regular">
+**最佳实践**：使用 ActionResult 可以提供更丰富的上下文信息，帮助 Agent 更好地理解和处理工具返回结果。
+</Note>
 
 ## 工具装饰器
 
@@ -179,6 +261,10 @@ tools = Tools(exclude_actions=['search', 'wait'])
 # 现在代理无法使用这些工具
 ```
 
+<Note>
+当工具数量过多时，LLM 可能难以做出最佳选择。移除不相关的工具可以提高 Agent 的准确性。
+</Note>
+
 ## 工具返回类型
 
 ### 字符串返回
@@ -243,9 +329,103 @@ async def main():
     await agent.run()
 ```
 
+## 实践练习
+
+### 练习 1：创建简单工具（⭐⭐）
+
+```python
+from browser_use import Tools, ActionResult
+
+tools = Tools()
+
+@tools.action('获取当前日期')
+async def get_date() -> str:
+    from datetime import datetime
+    return datetime.now().strftime("%Y-%m-%d")
+```
+
+**练习目标**：创建一个返回当前日期的工具。
+
+### 练习 2：创建 API 调用工具（⭐⭐⭐）
+
+```python
+import httpx
+from browser_use import Tools, ActionResult
+
+tools = Tools()
+
+@tools.action('获取天气信息')
+async def get_weather(city: str) -> ActionResult:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"https://api.weather.example/{city}"
+        )
+    return ActionResult(
+        extracted_content=response.json(),
+        success=response.status_code == 200
+    )
+```
+
+**练习目标**：创建一个调用天气 API 的工具。
+
+### 练习 3：工具与浏览器结合（⭐⭐⭐）
+
+```python
+from browser_use import Tools, ActionResult, BrowserSession
+
+tools = Tools()
+
+@tools.action('获取页面标题')
+async def get_title(browser_session: BrowserSession) -> ActionResult:
+    # 通过浏览器会话获取页面信息
+    page_info = await browser_session.get_page_info()
+    return ActionResult(extracted_content=page_info.get('title', ''))
+```
+
+**练习目标**：创建需要访问浏览器的工具。
+
+## 常见问题
+
+### Q: 工具参数不被识别怎么办？
+
+**A**: 检查以下几点：
+
+1. **参数名称**：确保与函数签名一致
+2. **类型注解**：添加正确的类型注解
+3. **必填参数**：确保必填参数有默认值或由 Agent 提供
+
+### Q: 工具返回结果不被使用怎么办？
+
+**A**:
+
+1. **提供清晰的描述**：`@tools.action('描述')` 中的描述要清晰
+2. **使用 ActionResult**：提供语义化的返回结构
+3. **添加 long_term_memory**：标记重要信息
+
+### Q: 如何提高工具的准确性？
+
+**A**:
+
+1. **详细的描述**：说明工具的用途和参数
+2. **示例返回**：在描述中包含示例返回格式
+3. **限制作用域**：使用 `allowed_domains` 限制使用范围
+
 ## 相关资源
 
 - [可用工具列表](/customize/tools/available)
 - [添加自定义工具](/customize/tools/add)
 - [移除工具](/customize/tools/remove)
 - [工具响应格式](/customize/tools/response)
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+
+**⭐ 学习检查**：完成本节后，你应该能：
+
+- [ ] 说出工具的定义方式和返回类型
+- [ ] 解释 ActionResult 各字段的作用
+- [ ] 创建满足特定需求的自定义工具
+- [ ] 理解工具与 Agent 的集成方式
+
+</div>
